@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Quiz</title>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="http://app.xaxxi.net/js/react.js"></script>
+    <script src="http://app.xaxxi.net/js/react-dom.js"></script>
+    
+  </head>
+  <body>
+
+    <div id="quiz-app" />
+
+    <script type="text/javascript" src="/public/quiz.js"></script>
+    <script type="text/javascript">
+      window.QuizApp.init(
+        document.getElementById('quiz-app')
+      )
+    </script>
+    
+  </body>
+</html>

@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "source-map-loader": "^0.1.5",
-    "ts-loader": "^0.9.5"
+    "ts-loader": "^0.9.5",
+    "webpack-node-externals": "^1.5.4"
   }
 }

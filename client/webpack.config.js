@@ -1,10 +1,10 @@
 module.exports = {
     entry: {
-      quiz: "./client/quiz.tsx"
+      quiz: "./src/quiz.tsx"
     },
   
     output: {
-        path: "./public",
+        path: "../public/",
         filename: "[name].js",
     },
 

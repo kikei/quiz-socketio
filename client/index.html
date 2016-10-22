@@ -24,7 +24,6 @@
       <h2>Control panel</h2>
       <p>
         <button id="btn-reset">Reset</button>
-        <button id="btn-join">Join by test</button>
         <button id="btn-end">End</button>
       </p>
       <p>
@@ -47,9 +46,9 @@
              .addEventListener('click', function(e) {
                socket.emit('msg', { type: 'reset' });
              });
-     document.getElementById('btn-join')
+     document.getElementById('btn-end')
              .addEventListener('click', function(e) {
-               socket.emit('msg', { type: 'join', answerer: 'test' });
+               socket.emit('msg', { type: 'end' })
              });
      document.getElementById('btn-q1')
              .addEventListener('click', function(e) {

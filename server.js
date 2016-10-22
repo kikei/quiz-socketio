@@ -71,6 +71,12 @@ var Quiz = function(question, choices, score) {
   this.hints = [];
   this.score = 0;
 };
+Quiz.prototype.getAnswer = function() {
+  return this.answer;
+};
+Quiz.prototype.showAnswer = function() {
+  return this.choices[this.answer];
+};
 Quiz.prototype.setAnswer = function(answer) {
   this.answer = answer;
 };
@@ -85,6 +91,11 @@ Quiz.prototype.setScore = function(score) {
 };
 Quiz.prototype.isRight = function(answer) {
   return this.answer == answer;
+};
+Quiz.prototype.toObject = function(answer) {
+  return { 'question': this.question,
+           'choices': this.choices,
+           'score': this.score }
 };
 
 /**
@@ -136,17 +147,10 @@ var store = new Store();
  */
 var io = require('socket.io').listen(app);
 io.sockets.on('connection', function(socket) {
+  console.log('connected', socket.id);
   socket.on('msg', function(data) {
     console.log('received:', data);
     switch (data.type) {
-    case 'register-user':
-      var username = data.username
-      io.sockets.emit('msg', {
-        type: 'register-user',
-        username: username,
-      })
-      break;
-
     /**
      * Answerer messages
      */
@@ -162,18 +166,19 @@ io.sockets.on('connection', function(socket) {
         console.error('failed to get socket id');
         break;
       }
-      var anserer = store.setClient(answerer, socketId);
+      console.log('joined', answerer, socketId);
+      var answerer = store.setClient(answerer, socketId);
       var state = store.getState();
       switch (state) {
       case 'standby':
-        io.sockets.emit('msg', {
+        io.sockets.connected[socketId].emit('msg', {
           type: 'joined',
           answerer: answerer,
           state: state
         });
         break;
-      case 'answer':
-        io.sockets.emit('msg', {
+      case 'question':
+        io.sockets.connected[socketId].emit('msg', {
           type: 'joined',
           answerer: answerer,
           state: state,
@@ -184,12 +189,13 @@ io.sockets.on('connection', function(socket) {
       break; // case join
     case 'myanswer':
       /* Receive an answer */
-      var answerer = data.anserer;
+      var answerer = data.answerer;
       var answer = data.answer;
       if (!answerer || (!answer && answer != 0)) {
-        console.error('bad data', answer);
+        console.error('bad data', data);
         break;
       }
+      var quiz = store.getCurrentQuiz();
       var score = quiz.getScore();
       var client = store.getClient(answerer);
       client.setAnswer(answer, score);
@@ -201,6 +207,10 @@ io.sockets.on('connection', function(socket) {
     case 'reset':
       /* Reset all stores */
       store.reset();
+      io.sockets.emit('msg', {
+        type: 'reset'
+      });
+      console.log('reseted')
       break; // case reset
       
     case 'question':
@@ -213,10 +223,11 @@ io.sockets.on('connection', function(socket) {
         console.error('bad data', data);
         break;
       }
-      store.addQuiz(new Quiz(question, choices, score));
+      var quiz = new Quiz(question, choices, score)
+      store.addQuiz(quiz);
       io.sockets.emit('msg', {
         type: 'question',
-        quiz: { 'question': question }
+        quiz: quiz.toObject()
       });
       break; // case question
       
@@ -236,7 +247,8 @@ io.sockets.on('connection', function(socket) {
       quiz.addHint(hint);
       io.sockets.emit('msg', {
         type: 'hint',
-        hint: hint
+        hint: hint,
+        score: score
       });
       break; // case hint
       
@@ -258,13 +270,18 @@ io.sockets.on('connection', function(socket) {
       for (var answerer in store.getClients()) {
         var client = store.getClient(answerer);
         var a = client.getAnswer();
-        if (!a) continue;
+        if (!a) {
+          console.log('not answered', client);
+          continue;
+        }
         var right = quiz.isRight(a.answer);
         var score = client.addScore(right ? a.score : 0);
-        var scoketId = client.getSocketId();
-        io.sockets.socket(socketId).emit('msg', {
+        var socketId = client.getSocketId();
+        console.log('send result to', socketId);
+        io.sockets.connected[socketId].emit('msg', {
           type: 'result',
-          result: right,
+          right: right,
+          answer: quiz.showAnswer(),
           score: score
         });
       }

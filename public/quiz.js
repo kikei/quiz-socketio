@@ -61,9 +61,10 @@
 	window.QuizApp = {
 	    init: function (root) {
 	        var preloadedState = {
-	            hello: 'Hello!',
-	            username: '',
-	            mode: Models_1.Mode.InputName
+	            myname: '',
+	            appState: Models_1.AppState.InputName,
+	            quiz: null,
+	            result: null,
 	        };
 	        var store = Redux.createStore(reducer, preloadedState, Redux.applyMiddleware(redux_thunk_1.default));
 	        listenSocket(store);
@@ -78,13 +79,72 @@
 	    socket.on('msg', function (data) {
 	        console.log('msg received:', data);
 	        switch (data.type) {
-	            case 'register-user':
-	                var username = data.username;
-	                console.log('usename is ' + username);
+	            case 'reset':
 	                store.dispatch({
-	                    type: Models_1.ActionType.ChangeMode,
-	                    payload: Models_1.Mode.Wait
+	                    type: Models_1.ActionType.ChangeAppState,
+	                    payload: Models_1.AppState.InputName
 	                });
+	                break;
+	            case 'joined':
+	                var answerer = data.answerer;
+	                var state = data.state;
+	                switch (state) {
+	                    case 'standby':
+	                        store.dispatch({
+	                            type: Models_1.ActionType.ChangeAppState,
+	                            payload: Models_1.AppState.StandBy
+	                        });
+	                        break;
+	                    case 'question':
+	                        var quiz_1 = new Models_1.Quiz(data.quiz);
+	                        store.dispatch({
+	                            type: Models_1.ActionType.SetQuiz,
+	                            payload: quiz_1
+	                        });
+	                        store.dispatch({
+	                            type: Models_1.ActionType.ChangeAppState,
+	                            payload: Models_1.AppState.Question
+	                        });
+	                        break;
+	                }
+	                break; // case joined
+	            case 'question':
+	                var quiz = new Models_1.Quiz(data.quiz);
+	                store.dispatch({
+	                    type: Models_1.ActionType.SetQuiz,
+	                    payload: quiz
+	                });
+	                store.dispatch({
+	                    type: Models_1.ActionType.ChangeAppState,
+	                    payload: Models_1.AppState.Question
+	                });
+	                break; // case question
+	            case 'hint':
+	                var hint = data.hint;
+	                var score = data.score;
+	                store.dispatch({
+	                    type: Models_1.ActionType.AddHint,
+	                    payload: { hint: hint, score: score }
+	                });
+	                break;
+	            case 'result':
+	                store.dispatch({
+	                    type: Models_1.ActionType.Result,
+	                    payload: new Models_1.Result(data)
+	                });
+	                store.dispatch({
+	                    type: Models_1.ActionType.ChangeAppState,
+	                    payload: Models_1.AppState.Result
+	                });
+	                break;
+	            case 'end':
+	                store.dispatch({
+	                    type: Models_1.ActionType.ChangeAppState,
+	                    payload: Models_1.AppState.End
+	                });
+	                break;
+	            default:
+	                console.debug('unknown message', data.type);
 	                break;
 	        }
 	    });
@@ -95,18 +155,49 @@
 	var assign = __webpack_require__(84);
 	function reducer(state, action) {
 	    switch (action.type) {
+	        case Models_1.ActionType.ChangeAppState:
+	            var next = action.payload;
+	            console.log('change app state:', next);
+	            return assign({}, state, { appState: next });
 	        case Models_1.ActionType.ChangeName:
 	            return assign({}, state, {
-	                username: action.payload
+	                myname: action.payload
 	            });
 	        case Models_1.ActionType.SubmitName:
-	            var username = action.payload;
-	            socket.emit('msg', { type: 'register-user', username: username });
+	            var answerer = action.payload;
+	            socket.emit('msg', {
+	                type: 'join',
+	                answerer: answerer
+	            });
 	            return assign({}, state);
-	        case Models_1.ActionType.ChangeMode:
-	            var nextmode = action.payload;
-	            console.log('change mode:', nextmode);
-	            return assign({}, state, { mode: nextmode });
+	        case Models_1.ActionType.SubmitAnswer:
+	            var answer = action.payload;
+	            socket.emit('msg', {
+	                type: 'myanswer',
+	                answerer: state.myname,
+	                answer: answer
+	            });
+	            return assign({}, state);
+	        case Models_1.ActionType.SetQuiz:
+	            var quiz = action.payload;
+	            console.log('received quiz');
+	            return assign({}, state, { quiz: quiz });
+	        case Models_1.ActionType.AddHint:
+	            var data = action.payload;
+	            var hint = data.hint;
+	            var score = data.score;
+	            console.log('received hint', hint, score);
+	            return assign({}, state, {
+	                quiz: assign({}, state.quiz, {
+	                    'hints': state.quiz.hints.concat(hint)
+	                })
+	            });
+	        case Models_1.ActionType.Result:
+	            var result = action.payload;
+	            console.log('received result', result);
+	            return assign({}, state, {
+	                'result': assign({}, result)
+	            });
 	        default:
 	            return state;
 	    }
@@ -9710,22 +9801,40 @@
 	/** Models **/
 	var Quiz = (function () {
 	    function Quiz(data) {
-	        this.id = data['id'];
-	        this.name = data['name'];
+	        this.question = data['question'] || '';
+	        this.choices = data['choices'] || [];
+	        this.hints = data['hints'] || [];
+	        this.score = data['score'] || 0;
 	    }
 	    return Quiz;
 	}());
 	exports.Quiz = Quiz;
-	(function (Mode) {
-	    Mode[Mode["InputName"] = 0] = "InputName";
-	    Mode[Mode["Wait"] = 1] = "Wait";
-	    Mode[Mode["AskQuestion"] = 2] = "AskQuestion";
-	})(exports.Mode || (exports.Mode = {}));
-	var Mode = exports.Mode;
+	var Result = (function () {
+	    function Result(data) {
+	        this.right = data.right;
+	        this.answer = data.answer;
+	        this.score = data.score;
+	    }
+	    return Result;
+	}());
+	exports.Result = Result;
+	(function (AppState) {
+	    AppState[AppState["InputName"] = 0] = "InputName";
+	    AppState[AppState["StandBy"] = 1] = "StandBy";
+	    AppState[AppState["Question"] = 2] = "Question";
+	    AppState[AppState["Answered"] = 3] = "Answered";
+	    AppState[AppState["Result"] = 4] = "Result";
+	    AppState[AppState["End"] = 5] = "End";
+	})(exports.AppState || (exports.AppState = {}));
+	var AppState = exports.AppState;
 	(function (ActionType) {
-	    ActionType[ActionType["ChangeName"] = 0] = "ChangeName";
-	    ActionType[ActionType["SubmitName"] = 1] = "SubmitName";
-	    ActionType[ActionType["ChangeMode"] = 2] = "ChangeMode";
+	    ActionType[ActionType["ChangeAppState"] = 0] = "ChangeAppState";
+	    ActionType[ActionType["ChangeName"] = 1] = "ChangeName";
+	    ActionType[ActionType["SubmitName"] = 2] = "SubmitName";
+	    ActionType[ActionType["SubmitAnswer"] = 3] = "SubmitAnswer";
+	    ActionType[ActionType["SetQuiz"] = 4] = "SetQuiz";
+	    ActionType[ActionType["AddHint"] = 5] = "AddHint";
+	    ActionType[ActionType["Result"] = 6] = "Result";
 	})(exports.ActionType || (exports.ActionType = {}));
 	var ActionType = exports.ActionType;
 
@@ -9758,24 +9867,53 @@
 	        e.preventDefault();
 	        this.props.dispatch({
 	            type: Models_1.ActionType.SubmitName,
-	            payload: this.props.state.username
+	            payload: this.props.state.myname
+	        });
+	    };
+	    QuizBox.prototype.handleChoice = function (choice, e) {
+	        e.preventDefault();
+	        this.props.dispatch({
+	            type: Models_1.ActionType.SubmitAnswer,
+	            payload: choice
+	        });
+	        this.props.dispatch({
+	            type: Models_1.ActionType.ChangeAppState,
+	            payload: Models_1.AppState.Answered
 	        });
 	    };
 	    QuizBox.prototype.render = function () {
+	        var _this = this;
 	        var state = this.props.state;
 	        var topView;
-	        switch (state.mode) {
-	            case Models_1.Mode.InputName:
+	        switch (state.appState) {
+	            case Models_1.AppState.InputName:
 	                topView =
-	                    React.createElement("div", null, React.createElement("h1", null, state.hello), React.createElement("form", null, React.createElement("input", {type: "text", name: "name", value: state.username, onChange: this.handleChangeName.bind(this)}), React.createElement("button", {onClick: this.handleSubmitName.bind(this)}, "Submit")));
+	                    React.createElement("div", null, React.createElement("h1", null, "Welcome!!"), React.createElement("form", null, React.createElement("input", {type: "text", name: "name", value: state.myname, onChange: this.handleChangeName.bind(this)}), React.createElement("button", {onClick: this.handleSubmitName.bind(this)}, "Submit")));
 	                break;
-	            case Models_1.Mode.InputName:
-	                topView =
-	                    React.createElement("div", null, React.createElement("h1", null, state.username));
-	                break;
-	            case Models_1.Mode.Wait:
+	            case Models_1.AppState.StandBy:
 	                topView =
 	                    React.createElement("div", null, React.createElement("h1", null, "Please wait..."));
+	                break;
+	            case Models_1.AppState.Question:
+	                topView =
+	                    React.createElement("div", null, React.createElement("h1", null, state.quiz.question), React.createElement("ol", null, state.quiz.choices.map(function (choice, i) {
+	                        return React.createElement("li", {key: i}, React.createElement("button", {onClick: _this.handleChoice.bind(_this, i)}, choice));
+	                    })), React.createElement("ol", null, state.quiz.hints.map(function (hint, i) {
+	                        return React.createElement("li", {key: i}, hint);
+	                    })));
+	                break;
+	            case Models_1.AppState.Answered:
+	                topView =
+	                    React.createElement("div", null, React.createElement("h1", null, "Answered!!"), React.createElement("p", null, "Please wait a result."));
+	                break;
+	            case Models_1.AppState.Result:
+	                var message = state.result.right ? 'Yes!' : 'No!';
+	                topView =
+	                    React.createElement("div", null, React.createElement("h1", null, message), React.createElement("h2", null, state.quiz.question), React.createElement("p", null, state.result.answer));
+	                break;
+	            case Models_1.AppState.End:
+	                topView =
+	                    React.createElement("div", null, React.createElement("h1", null, "Game over"));
 	                break;
 	            default:
 	                topView =

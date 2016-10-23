@@ -6,6 +6,7 @@ import thunk from 'redux-thunk'
 import { Provider, connect } from 'react-redux'
 import { Quiz, Result, QuizBoxState, AppState, Action, ActionType } from './Models'
 import { QuizBox } from './components/QuizBox'
+import Config from './Config'
 
 var socket: SocketIOClient.Socket = null
 
@@ -27,6 +28,8 @@ function render(root: Element, store: Redux.Store<QuizBoxState>) {
       appState: AppState.InputName,
       quiz: null,
       result: null,
+      cumulativeScore: 0,
+      masterMode: false
     }
     const store: Redux.Store<QuizBoxState> = Redux.createStore(
       reducer,
@@ -61,19 +64,29 @@ function listenSocket(store: Redux.Store<QuizBoxState>) {
         switch (state) {
           case 'standby':
             store.dispatch({
+              type: ActionType.SetCumulativeScore,
+              payload: data.cumulativeScore
+            })
+            store.dispatch({
               type: ActionType.ChangeAppState,
               payload: AppState.StandBy
             })
             break;
           case 'question':
+          case 'answered':
             const quiz = new Quiz(data.quiz)
+            store.dispatch({
+              type: ActionType.SetCumulativeScore,
+              payload: data.cumulativeScore
+            })
             store.dispatch({
               type: ActionType.SetQuiz,
               payload: quiz
             })
             store.dispatch({
               type: ActionType.ChangeAppState,
-              payload: AppState.Question
+              payload: state == 'question' ?
+                AppState.Question : AppState.Answered
             })
             break
         }
@@ -137,11 +150,14 @@ export
       })
     case ActionType.SubmitName:
       const answerer = (action as Action<string>).payload
+      const masterMode: boolean = answerer == Config.masterName
       socket.emit('msg', {
         type: 'join',
         answerer: answerer
       })
-      return assign({}, state)
+      return assign({}, state, {
+        masterMode: masterMode
+      })
     case ActionType.SubmitAnswer:
       const answer = (action as Action<string>).payload
       socket.emit('msg', {
@@ -150,6 +166,11 @@ export
         answer: answer
       })
       return assign({}, state)
+
+    case ActionType.SetCumulativeScore:
+      const cumulativeScore = (action as Action<number>).payload
+      console.log('set cumulative score', cumulativeScore)
+      return assign({}, state, { cumulativeScore: cumulativeScore })
     case ActionType.SetQuiz:
       const quiz = (action as Action<Quiz>).payload
       console.log('received quiz')
@@ -161,15 +182,21 @@ export
       console.log('received hint', hint, score)
       return assign({}, state, {
         quiz: assign({}, state.quiz, {
-          'hints': state.quiz.hints.concat(hint)
+          hints: state.quiz.hints.concat(hint),
         })
       })
     case ActionType.Result:
       const result = (action as Action<Result>).payload
       console.log('received result', result)
       return assign({}, state, {
-        'result': assign({}, result)
+        result: assign({}, result),
+        cumulativeScore: result.cumulativeScore
       })
+    case ActionType.MasterOperation:
+      const msg = action.payload
+      console.log('master operation', msg)
+      socket.emit('msg', msg)
+      return assign({}, state)
     default:
       return state
   }

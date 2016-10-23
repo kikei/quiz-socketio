@@ -57,6 +57,12 @@ export class Client {
     this.cumulativeScore += score
     return this.cumulativeScore
   }
+  public hasAnswer() {
+    return !!this.answer
+  }
+  public clearAnswer() {
+    this.answer = null
+  }
 }
 
 /**
@@ -72,7 +78,7 @@ export class Quiz {
     this.question = question
     this.choices = choices
     this.rightChoice = -1
-    this.score = 0
+    this.score = score
     this.hints = []
   }
   public showAnswer(): string {
@@ -162,18 +168,21 @@ io.sockets.on('connection', function (socket) {
         const state = store.state
         switch (state) {
           case State.StandBy:
+          case State.Answer:
             io.sockets.connected[socketId].emit('msg', {
               type: 'joined',
               answerer: client.answerer,
-              state: 'standby'
+              state: 'standby',
+              cumulativeScore: client.cumulativeScore
             })
             break
           case State.Question:
             io.sockets.connected[socketId].emit('msg', {
               type: 'joined',
               answerer: client.answerer,
-              state: 'question',
-              quiz: store.currentQuiz
+              state: client.hasAnswer() ? 'answered' : 'question',
+              quiz: store.currentQuiz,
+              cumulativeScore: client.cumulativeScore,
             })
             break
         }
@@ -188,6 +197,7 @@ io.sockets.on('connection', function (socket) {
           break
         }
         var quiz: Quiz = store.currentQuiz
+        console.log('myanswer', quiz)
         var score: number = quiz.score
         var client: Client = store.getClientByName(answerer)
         client.answer = new Answer(answer, score)
@@ -261,21 +271,25 @@ io.sockets.on('connection', function (socket) {
         quiz.rightChoice = answer
 
         for (var answerer in store.clients) {
-          var client = store.getClientByName(answerer)
-          var a = client.answer
-          if (!a) {
+          const client = store.getClientByName(answerer)
+          const a = client.answer
+          if (!client.hasAnswer()) {
             console.log('not answered', client)
             continue;
           }
-          var right = quiz.isRight(a.answer)
-          var score = client.addScore(right ? a.score : 0)
-          var socketId = client.socketId
+          client.clearAnswer();
+          const right = quiz.isRight(a.answer)
+          const score = right ? a.score : 0
+
+          const cumulativeScore = client.addScore(score)
+          const socketId = client.socketId
           console.log('send result to', socketId)
           io.sockets.connected[socketId].emit('msg', {
             type: 'result',
             right: right,
             answer: quiz.showAnswer(),
-            score: score
+            score: score,
+            cumulativeScore: cumulativeScore
           })
         }
         break // case answer

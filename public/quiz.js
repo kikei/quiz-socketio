@@ -53,6 +53,7 @@
 	var react_redux_1 = __webpack_require__(69);
 	var Models_1 = __webpack_require__(82);
 	var QuizBox_1 = __webpack_require__(83);
+	var Config_1 = __webpack_require__(84);
 	var socket = null;
 	function render(root, store) {
 	    var App = react_redux_1.connect(function (state) { return { state: state }; })(QuizBox_1.QuizBox);
@@ -65,6 +66,8 @@
 	            appState: Models_1.AppState.InputName,
 	            quiz: null,
 	            result: null,
+	            cumulativeScore: 0,
+	            masterMode: false
 	        };
 	        var store = Redux.createStore(reducer, preloadedState, Redux.applyMiddleware(redux_thunk_1.default));
 	        listenSocket(store);
@@ -91,19 +94,29 @@
 	                switch (state) {
 	                    case 'standby':
 	                        store.dispatch({
+	                            type: Models_1.ActionType.SetCumulativeScore,
+	                            payload: data.cumulativeScore
+	                        });
+	                        store.dispatch({
 	                            type: Models_1.ActionType.ChangeAppState,
 	                            payload: Models_1.AppState.StandBy
 	                        });
 	                        break;
 	                    case 'question':
+	                    case 'answered':
 	                        var quiz_1 = new Models_1.Quiz(data.quiz);
+	                        store.dispatch({
+	                            type: Models_1.ActionType.SetCumulativeScore,
+	                            payload: data.cumulativeScore
+	                        });
 	                        store.dispatch({
 	                            type: Models_1.ActionType.SetQuiz,
 	                            payload: quiz_1
 	                        });
 	                        store.dispatch({
 	                            type: Models_1.ActionType.ChangeAppState,
-	                            payload: Models_1.AppState.Question
+	                            payload: state == 'question' ?
+	                                Models_1.AppState.Question : Models_1.AppState.Answered
 	                        });
 	                        break;
 	                }
@@ -152,7 +165,7 @@
 	/**
 	 * QuizReducer
 	 */
-	var assign = __webpack_require__(84);
+	var assign = __webpack_require__(85);
 	function reducer(state, action) {
 	    switch (action.type) {
 	        case Models_1.ActionType.ChangeAppState:
@@ -165,11 +178,14 @@
 	            });
 	        case Models_1.ActionType.SubmitName:
 	            var answerer = action.payload;
+	            var masterMode = answerer == Config_1.default.masterName;
 	            socket.emit('msg', {
 	                type: 'join',
 	                answerer: answerer
 	            });
-	            return assign({}, state);
+	            return assign({}, state, {
+	                masterMode: masterMode
+	            });
 	        case Models_1.ActionType.SubmitAnswer:
 	            var answer = action.payload;
 	            socket.emit('msg', {
@@ -178,6 +194,10 @@
 	                answer: answer
 	            });
 	            return assign({}, state);
+	        case Models_1.ActionType.SetCumulativeScore:
+	            var cumulativeScore = action.payload;
+	            console.log('set cumulative score', cumulativeScore);
+	            return assign({}, state, { cumulativeScore: cumulativeScore });
 	        case Models_1.ActionType.SetQuiz:
 	            var quiz = action.payload;
 	            console.log('received quiz');
@@ -189,15 +209,21 @@
 	            console.log('received hint', hint, score);
 	            return assign({}, state, {
 	                quiz: assign({}, state.quiz, {
-	                    'hints': state.quiz.hints.concat(hint)
+	                    hints: state.quiz.hints.concat(hint),
 	                })
 	            });
 	        case Models_1.ActionType.Result:
 	            var result = action.payload;
 	            console.log('received result', result);
 	            return assign({}, state, {
-	                'result': assign({}, result)
+	                result: assign({}, result),
+	                cumulativeScore: result.cumulativeScore
 	            });
+	        case Models_1.ActionType.MasterOperation:
+	            var msg = action.payload;
+	            console.log('master operation', msg);
+	            socket.emit('msg', msg);
+	            return assign({}, state);
 	        default:
 	            return state;
 	    }
@@ -9794,6 +9820,7 @@
 	        this.right = data.right;
 	        this.answer = data.answer;
 	        this.score = data.score;
+	        this.cumulativeScore = data.cumulativeScore;
 	    }
 	    return Result;
 	}());
@@ -9812,9 +9839,11 @@
 	    ActionType[ActionType["ChangeName"] = 1] = "ChangeName";
 	    ActionType[ActionType["SubmitName"] = 2] = "SubmitName";
 	    ActionType[ActionType["SubmitAnswer"] = 3] = "SubmitAnswer";
-	    ActionType[ActionType["SetQuiz"] = 4] = "SetQuiz";
-	    ActionType[ActionType["AddHint"] = 5] = "AddHint";
-	    ActionType[ActionType["Result"] = 6] = "Result";
+	    ActionType[ActionType["SetCumulativeScore"] = 4] = "SetCumulativeScore";
+	    ActionType[ActionType["SetQuiz"] = 5] = "SetQuiz";
+	    ActionType[ActionType["AddHint"] = 6] = "AddHint";
+	    ActionType[ActionType["Result"] = 7] = "Result";
+	    ActionType[ActionType["MasterOperation"] = 8] = "MasterOperation";
 	})(exports.ActionType || (exports.ActionType = {}));
 	var ActionType = exports.ActionType;
 
@@ -9831,6 +9860,7 @@
 	};
 	var React = __webpack_require__(51);
 	var Models_1 = __webpack_require__(82);
+	var Config_1 = __webpack_require__(84);
 	var QuizBox = (function (_super) {
 	    __extends(QuizBox, _super);
 	    function QuizBox() {
@@ -9861,10 +9891,62 @@
 	            payload: Models_1.AppState.Answered
 	        });
 	    };
+	    QuizBox.prototype.handleMasterReset = function (e) {
+	        e.preventDefault();
+	        this.props.dispatch({
+	            type: Models_1.ActionType.MasterOperation,
+	            payload: {
+	                type: 'reset'
+	            }
+	        });
+	    };
+	    QuizBox.prototype.handleMasterEnd = function (e) {
+	        e.preventDefault();
+	        this.props.dispatch({
+	            type: Models_1.ActionType.MasterOperation,
+	            payload: {
+	                type: 'end'
+	            }
+	        });
+	    };
+	    QuizBox.prototype.handleMasterQuestion = function (quiz, e) {
+	        e.preventDefault();
+	        this.props.dispatch({
+	            type: Models_1.ActionType.MasterOperation,
+	            payload: {
+	                type: 'question',
+	                question: quiz.question,
+	                choices: quiz.choices,
+	                score: quiz.score
+	            }
+	        });
+	    };
+	    QuizBox.prototype.handleMasterChoice = function (rightChoice, e) {
+	        e.preventDefault();
+	        this.props.dispatch({
+	            type: Models_1.ActionType.MasterOperation,
+	            payload: {
+	                type: 'answer',
+	                answer: rightChoice
+	            }
+	        });
+	    };
+	    QuizBox.prototype.handleMasterHint = function (hint, score, e) {
+	        e.preventDefault();
+	        this.props.dispatch({
+	            type: Models_1.ActionType.MasterOperation,
+	            payload: {
+	                type: 'hint',
+	                hint: hint,
+	                score: score
+	            }
+	        });
+	    };
 	    QuizBox.prototype.render = function () {
 	        var _this = this;
 	        var state = this.props.state;
 	        var topView;
+	        var headerView;
 	        switch (state.appState) {
 	            case Models_1.AppState.InputName:
 	                topView =
@@ -9899,7 +9981,39 @@
 	                topView =
 	                    React.createElement("div", null, React.createElement("h1", null, "Unknown mode"));
 	        }
-	        return (React.createElement("div", null, topView));
+	        switch (state.appState) {
+	            case Models_1.AppState.InputName:
+	            case Models_1.AppState.End:
+	                headerView = React.createElement("header", null);
+	                break;
+	            case Models_1.AppState.StandBy:
+	            case Models_1.AppState.Question:
+	            case Models_1.AppState.Answered:
+	            case Models_1.AppState.Result:
+	                headerView =
+	                    React.createElement("header", null, React.createElement("p", null, "Name: ", state.myname, ", Score: ", state.cumulativeScore));
+	                break;
+	            default:
+	                topView = React.createElement("header", null);
+	        }
+	        var mainView;
+	        if (state.masterMode) {
+	            mainView =
+	                React.createElement("div", {id: "masterMode"}, React.createElement("h1", null, "Master mode"), React.createElement("p", null, React.createElement("button", {onClick: this.handleMasterReset.bind(this)}, "Reset"), React.createElement("button", {onClick: this.handleMasterEnd.bind(this)}, "End")), Config_1.default.quizzes.map(function (q, i) {
+	                    return React.createElement("div", null, React.createElement("section", null, React.createElement("h2", null, "Question ", i, ":"), React.createElement("button", {onClick: _this.handleMasterQuestion.bind(_this, q.quiz)}, q.quiz.question), React.createElement("p", null, "Score: ", q.quiz.score)), React.createElement("section", null, React.createElement("h2", null, "Hints:"), React.createElement("ul", null, q.hints.map(function (hint, j) {
+	                        return React.createElement("li", null, React.createElement("button", {onClick: _this.handleMasterHint.bind(_this, hint.hint, hint.score)}, hint.hint, "(Score: ", hint.score, ")"));
+	                    }))), React.createElement("section", null, React.createElement("h2", null, "Answer"), React.createElement("ul", null, q.quiz.choices.map(function (choice, c) {
+	                        return c == q.rightChoice ?
+	                            React.createElement("li", null, React.createElement("button", {onClick: _this.handleMasterChoice.bind(_this, q.rightChoice)}, choice)) :
+	                            React.createElement("li", null, choice);
+	                    }))));
+	                }));
+	        }
+	        else {
+	            mainView =
+	                React.createElement("div", {id: "answererMode"}, headerView, React.createElement("section", null, topView));
+	        }
+	        return (React.createElement("div", {id: "mainView"}, mainView));
 	    };
 	    return QuizBox;
 	}(React.Component));
@@ -9908,6 +10022,43 @@
 
 /***/ },
 /* 84 */
+/***/ function(module, exports) {
+
+	"use strict";
+	var QuizAnswer = (function () {
+	    function QuizAnswer(data) {
+	        this.quiz = data.quiz;
+	        this.hints = data.hints;
+	        this.rightChoice = data.rightChoice;
+	    }
+	    return QuizAnswer;
+	}());
+	var Config = (function () {
+	    function Config() {
+	    }
+	    Config.masterName = 'master';
+	    Config.quizzes = [
+	        new QuizAnswer({
+	            quiz: {
+	                question: 'What has four legs and a back but no body?',
+	                choices: ['Door', 'Chair', 'Spoon'],
+	                score: 10
+	            },
+	            hints: [
+	                { hint: 'Hint1', score: 5 },
+	                { hint: 'Hint2', score: 3 }
+	            ],
+	            rightChoice: 1
+	        })
+	    ];
+	    return Config;
+	}());
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = Config;
+
+
+/***/ },
+/* 85 */
 /***/ function(module, exports) {
 
 	'use strict';

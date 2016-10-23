@@ -18,10 +18,12 @@ export class Result {
   public right: boolean
   public answer: string
   public score: number
+  public cumulativeScore: number
   constructor(data: any) {
     this.right = data.right
     this.answer = data.answer
     this.score = data.score
+    this.cumulativeScore = data.cumulativeScore
   }
 }
 
@@ -40,6 +42,8 @@ export interface QuizBoxState {
   appState: AppState,
   quiz: Quiz,
   result: Result,
+  cumulativeScore: number,
+  masterMode: boolean
 }
 
 /** Actions **/
@@ -55,7 +59,10 @@ export enum ActionType {
   SubmitName,
   SubmitAnswer,
 
+  SetCumulativeScore,
   SetQuiz,
   AddHint,
   Result,
+
+  MasterOperation
 }

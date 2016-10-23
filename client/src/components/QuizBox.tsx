@@ -1,7 +1,7 @@
 import * as React from "react"
 import * as Redux from 'redux'
-import { QuizBoxState, AppState, ActionType } from '../Models'
-
+import { Quiz, QuizBoxState, AppState, ActionType } from '../Models'
+import Config from '../Config'
 
 export interface QuizBoxProps {
   state: QuizBoxState
@@ -34,10 +34,65 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
       payload: AppState.Answered
     })
   }
+  handleMasterReset(e: React.SyntheticEvent) {
+    e.preventDefault();
+    this.props.dispatch({
+      type: ActionType.MasterOperation,
+      payload: {
+        type: 'reset'
+      }
+    })
+  }
+  handleMasterEnd(e: React.SyntheticEvent) {
+    e.preventDefault();
+    this.props.dispatch({
+      type: ActionType.MasterOperation,
+      payload: {
+        type: 'end'
+      }
+    })
+  }
+  handleMasterQuestion(quiz: Quiz, e: React.SyntheticEvent) {
+    e.preventDefault();
+    this.props.dispatch({
+      type: ActionType.MasterOperation,
+      payload: {
+        type: 'question',
+        question: quiz.question,
+        choices: quiz.choices,
+        score: quiz.score
+      }
+    })
+  }
+
+  handleMasterChoice(rightChoice: number, e: React.SyntheticEvent) {
+    e.preventDefault();
+    this.props.dispatch({
+      type: ActionType.MasterOperation,
+      payload: {
+        type: 'answer',
+        answer: rightChoice
+      }
+    })
+  }
+  handleMasterHint(hint: string, score: number, e: React.SyntheticEvent) {
+    e.preventDefault();
+    this.props.dispatch({
+      type: ActionType.MasterOperation,
+      payload: {
+        type: 'hint',
+        hint: hint,
+        score: score
+      }
+    })
+  }
+
   render() {
     const state = this.props.state
 
     var topView: any
+    var headerView: any
+
     switch (state.appState) {
       case AppState.InputName:
         topView =
@@ -107,9 +162,85 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
             <h1>Unknown mode</h1>
           </div>
     }
+    switch (state.appState) {
+      case AppState.InputName:
+      case AppState.End:
+        headerView = <header></header>
+        break
+      case AppState.StandBy:
+      case AppState.Question:
+      case AppState.Answered:
+      case AppState.Result:
+        headerView =
+          <header>
+            <p>Name: {state.myname}, Score: {state.cumulativeScore}</p>
+          </header>
+        break
+      default:
+        topView = <header></header>
+    }
+
+    var mainView: any
+
+    if (state.masterMode) {
+      mainView =
+        <div id="masterMode">
+          <h1>Master mode</h1>
+          <p>
+            <button onClick={this.handleMasterReset.bind(this)}>Reset</button>
+            <button onClick={this.handleMasterEnd.bind(this)}>End</button>
+          </p>
+          {Config.quizzes.map((q, i) =>
+            <div>
+              <section>
+                <h2>Question {i}:</h2>
+                <button onClick={this.handleMasterQuestion.bind(this, q.quiz)}>
+                  {q.quiz.question}
+                </button>
+                <p>Score: {q.quiz.score}</p>
+              </section>
+              <section>
+                <h2>Hints:</h2>
+                <ul>
+                  {q.hints.map((hint, j) =>
+                    <li>
+                      <button onClick={this.handleMasterHint.bind(this, hint.hint, hint.score)}>
+                        {hint.hint}(Score: {hint.score})
+                    </button>
+                    </li>
+                  )}
+                </ul>
+              </section>
+              <section>
+                <h2>Answer</h2>
+                <ul>
+                  {q.quiz.choices.map((choice, c) =>
+                    c == q.rightChoice ?
+                      <li>
+                        <button onClick={this.handleMasterChoice.bind(this, q.rightChoice)}>
+                          {choice}
+                        </button>
+                      </li> :
+                      <li>{choice}</li>
+                  )}
+                </ul>
+              </section>
+            </div>
+          )}
+        </div>
+    } else {
+      mainView =
+        <div id="answererMode">
+          {headerView}
+          <section>
+            {topView}
+          </section>
+        </div>
+    }
+
     return (
-      <div>
-        {topView}
+      <div id="mainView">
+        {mainView}
       </div>
     )
   }

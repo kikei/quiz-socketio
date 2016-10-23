@@ -1,0 +1,28 @@
+
+#answerer-view > * {
+    text-align: center;
+}
+
+#navbar-answerer {
+    text-align: right;
+}
+
+#list-choices {
+    list-style: none;
+}
+
+#list-choices button {
+    width: 48%;
+}
+
+#list-hints {
+    list-style: none;
+}
+
+#list-hints .columns, #list-hints .column {
+    margin-left: 0px;
+}
+
+#master-list-hints, #master-list-choices {
+    list-style: none;
+}

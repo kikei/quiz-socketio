@@ -32,6 +32,7 @@ export enum AppState {
   StandBy,
   Question,
   Answered,
+  Timeout,
   Result,
   End
 }

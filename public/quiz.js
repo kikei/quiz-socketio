@@ -140,6 +140,12 @@
 	                    payload: { hint: hint, score: score }
 	                });
 	                break;
+	            case 'timeout':
+	                store.dispatch({
+	                    type: Models_1.ActionType.ChangeAppState,
+	                    payload: Models_1.AppState.Timeout
+	                });
+	                break;
 	            case 'result':
 	                store.dispatch({
 	                    type: Models_1.ActionType.Result,
@@ -209,7 +215,7 @@
 	            console.log('received hint', hint, score);
 	            return assign({}, state, {
 	                quiz: assign({}, state.quiz, {
-	                    hints: state.quiz.hints.concat(hint),
+	                    hints: [hint].concat(state.quiz.hints),
 	                })
 	            });
 	        case Models_1.ActionType.Result:
@@ -9830,8 +9836,9 @@
 	    AppState[AppState["StandBy"] = 1] = "StandBy";
 	    AppState[AppState["Question"] = 2] = "Question";
 	    AppState[AppState["Answered"] = 3] = "Answered";
-	    AppState[AppState["Result"] = 4] = "Result";
-	    AppState[AppState["End"] = 5] = "End";
+	    AppState[AppState["Timeout"] = 4] = "Timeout";
+	    AppState[AppState["Result"] = 5] = "Result";
+	    AppState[AppState["End"] = 6] = "End";
 	})(exports.AppState || (exports.AppState = {}));
 	var AppState = exports.AppState;
 	(function (ActionType) {
@@ -9942,6 +9949,15 @@
 	            }
 	        });
 	    };
+	    QuizBox.prototype.handleMasterTimeout = function (e) {
+	        e.preventDefault();
+	        this.props.dispatch({
+	            type: Models_1.ActionType.MasterOperation,
+	            payload: {
+	                type: 'timeout'
+	            }
+	        });
+	    };
 	    QuizBox.prototype.render = function () {
 	        var _this = this;
 	        var state = this.props.state;
@@ -9950,7 +9966,7 @@
 	        switch (state.appState) {
 	            case Models_1.AppState.InputName:
 	                topView =
-	                    React.createElement("div", null, React.createElement("h1", null, "Welcome!!"), React.createElement("form", null, React.createElement("input", {type: "text", name: "name", value: state.myname, onChange: this.handleChangeName.bind(this)}), React.createElement("button", {onClick: this.handleSubmitName.bind(this)}, "Submit")));
+	                    React.createElement("div", null, React.createElement("header", {className: "row"}, React.createElement("h1", null, "Welcome!!")), React.createElement("form", null, React.createElement("div", {className: "row"}, React.createElement("label", {htmlFor: "fieldInputName"}, "Input your name:"), React.createElement("input", {type: "text", name: "name", id: "fieldInputName", value: state.myname, onChange: this.handleChangeName.bind(this)})), React.createElement("div", {className: "row"}, React.createElement("button", {onClick: this.handleSubmitName.bind(this), className: "button-primary"}, "Submit"))));
 	                break;
 	            case Models_1.AppState.StandBy:
 	                topView =
@@ -9958,62 +9974,67 @@
 	                break;
 	            case Models_1.AppState.Question:
 	                topView =
-	                    React.createElement("div", null, React.createElement("h1", null, state.quiz.question), React.createElement("ol", null, state.quiz.choices.map(function (choice, i) {
-	                        return React.createElement("li", {key: i}, React.createElement("button", {onClick: _this.handleChoice.bind(_this, i)}, choice));
-	                    })), React.createElement("ol", null, state.quiz.hints.map(function (hint, i) {
-	                        return React.createElement("li", {key: i}, hint);
+	                    React.createElement("div", null, React.createElement("h1", null, state.quiz.question), React.createElement("ul", {id: "list-choices"}, state.quiz.choices.map(function (choice, i) {
+	                        return React.createElement("li", {key: i, className: "row"}, React.createElement("button", {onClick: _this.handleChoice.bind(_this, i), className: "one-half"}, choice));
+	                    })), React.createElement("ul", {id: "list-hints", className: "row"}, state.quiz.hints.map(function (hint, i) {
+	                        return React.createElement("li", {key: i, className: "six columns"}, hint);
 	                    })));
 	                break;
 	            case Models_1.AppState.Answered:
 	                topView =
-	                    React.createElement("div", null, React.createElement("h1", null, "Answered!!"), React.createElement("p", null, "Please wait a result."));
+	                    React.createElement("div", {className: "row"}, React.createElement("h1", null, "Answered!!"), React.createElement("p", null, "Please wait a result."));
+	                break;
+	            case Models_1.AppState.Timeout:
+	                topView =
+	                    React.createElement("div", {className: "row"}, React.createElement("h1", null, "Timeout!!"), React.createElement("p", null, "Please wait a result."));
 	                break;
 	            case Models_1.AppState.Result:
 	                var message = state.result.right ? 'Yes!' : 'No!';
 	                topView =
-	                    React.createElement("div", null, React.createElement("h1", null, message), React.createElement("h2", null, state.quiz.question), React.createElement("p", null, state.result.answer));
+	                    React.createElement("div", null, React.createElement("h1", null, message), React.createElement("h2", null, state.quiz.question), React.createElement("h3", null, state.result.answer));
 	                break;
 	            case Models_1.AppState.End:
 	                topView =
 	                    React.createElement("div", null, React.createElement("h1", null, "Game over"));
 	                break;
 	            default:
+	                console.error('unknown mode');
 	                topView =
 	                    React.createElement("div", null, React.createElement("h1", null, "Unknown mode"));
 	        }
 	        switch (state.appState) {
 	            case Models_1.AppState.InputName:
 	            case Models_1.AppState.End:
-	                headerView = React.createElement("header", null);
+	                headerView = React.createElement("nav", null);
 	                break;
 	            case Models_1.AppState.StandBy:
 	            case Models_1.AppState.Question:
 	            case Models_1.AppState.Answered:
+	            case Models_1.AppState.Timeout:
 	            case Models_1.AppState.Result:
 	                headerView =
-	                    React.createElement("header", null, React.createElement("p", null, "Name: ", state.myname, ", Score: ", state.cumulativeScore));
+	                    React.createElement("nav", {id: "navbar-answerer"}, React.createElement("p", null, "Player Name: ", state.myname, ", Score: ", state.cumulativeScore));
 	                break;
 	            default:
-	                topView = React.createElement("header", null);
+	                topView = React.createElement("nav", null);
 	        }
 	        var mainView;
 	        if (state.masterMode) {
 	            mainView =
-	                React.createElement("div", {id: "masterMode"}, React.createElement("h1", null, "Master mode"), React.createElement("p", null, React.createElement("button", {onClick: this.handleMasterReset.bind(this)}, "Reset"), React.createElement("button", {onClick: this.handleMasterEnd.bind(this)}, "End")), Config_1.default.quizzes.map(function (q, i) {
-	                    return React.createElement("div", null, React.createElement("section", null, React.createElement("h2", null, "Question ", i, ":"), React.createElement("button", {onClick: _this.handleMasterQuestion.bind(_this, q.quiz)}, q.quiz.question), React.createElement("p", null, "Score: ", q.quiz.score)), React.createElement("section", null, React.createElement("h2", null, "Hints:"), React.createElement("ul", null, q.hints.map(function (hint, j) {
-	                        return React.createElement("li", null, React.createElement("button", {onClick: _this.handleMasterHint.bind(_this, hint.hint, hint.score)}, hint.hint, "(Score: ", hint.score, ")"));
-	                    }))), React.createElement("section", null, React.createElement("h2", null, "Answer"), React.createElement("ul", null, q.quiz.choices.map(function (choice, c) {
-	                        return c == q.rightChoice ?
-	                            React.createElement("li", null, React.createElement("button", {onClick: _this.handleMasterChoice.bind(_this, q.rightChoice)}, choice)) :
-	                            React.createElement("li", null, choice);
+	                React.createElement("div", {id: "master-view", className: "container"}, React.createElement("h1", null, "Master mode"), React.createElement("p", null, React.createElement("button", {onClick: this.handleMasterReset.bind(this)}, "Reset"), React.createElement("button", {onClick: this.handleMasterEnd.bind(this)}, "End")), Config_1.default.quizzes.map(function (q, i) {
+	                    return React.createElement("div", null, React.createElement("section", null, React.createElement("h2", null, "Question ", i), React.createElement("button", {onClick: _this.handleMasterQuestion.bind(_this, q.quiz)}, q.quiz.question), React.createElement("p", null, "Score: ", q.quiz.score)), React.createElement("section", null, React.createElement("h2", null, "Hints"), React.createElement("ul", {id: "master-list-hints", className: "row"}, q.hints.map(function (hint, j) {
+	                        return React.createElement("li", {className: "row"}, React.createElement("button", {onClick: _this.handleMasterHint.bind(_this, hint.hint, hint.score)}, hint.hint, "\\ (Score: ", hint.score, ")"));
+	                    }))), React.createElement("section", null, React.createElement("h2", null, "Timeout"), React.createElement("ul", {id: "master-list-timeout", className: "row"}, React.createElement("li", {className: "row"}, React.createElement("button", {onClick: _this.handleMasterTimeout.bind(_this), className: "button-primary"}, "Timeout")))), React.createElement("section", null, React.createElement("h2", null, "Answer"), React.createElement("ul", {id: "master-list-choices", className: "row"}, q.quiz.choices.map(function (choice, c) {
+	                        var className = c == q.rightChoice ? "button-primary" : "";
+	                        return React.createElement("li", {key: c}, React.createElement("button", {onClick: _this.handleMasterChoice.bind(_this, c), className: className}, choice));
 	                    }))));
 	                }));
 	        }
 	        else {
 	            mainView =
-	                React.createElement("div", {id: "answererMode"}, headerView, React.createElement("section", null, topView));
+	                React.createElement("div", {id: "answerer-view", className: "container"}, headerView, topView);
 	        }
-	        return (React.createElement("div", {id: "mainView"}, mainView));
+	        return (React.createElement("div", {id: "main-view"}, mainView));
 	    };
 	    return QuizBox;
 	}(React.Component));

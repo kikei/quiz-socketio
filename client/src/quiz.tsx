@@ -110,6 +110,12 @@ function listenSocket(store: Redux.Store<QuizBoxState>) {
           payload: { hint: hint, score: score }
         })
         break
+      case 'timeout':
+        store.dispatch({
+          type: ActionType.ChangeAppState,
+          payload: AppState.Timeout
+        })
+        break
       case 'result':
         store.dispatch({
           type: ActionType.Result,
@@ -182,7 +188,7 @@ export
       console.log('received hint', hint, score)
       return assign({}, state, {
         quiz: assign({}, state.quiz, {
-          hints: state.quiz.hints.concat(hint),
+          hints: [hint].concat(state.quiz.hints),
         })
       })
     case ActionType.Result:

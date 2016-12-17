@@ -6,6 +6,8 @@ import http = require('http')
 /**
  * HTTP Server
  */
+const port = process.env.PORT || 3001
+
 const app = http.createServer((req: http.ServerRequest, res: http.ServerResponse) => {
   const pathName = url.parse(req.url).pathname
   if (pathName.indexOf('/public') == 0) {
@@ -14,6 +16,10 @@ const app = http.createServer((req: http.ServerRequest, res: http.ServerResponse
       case '.js':
       case '.map':
         contentType = 'text/javascript'
+        break
+      case '.css':
+        contentType = 'text/css'
+        break
     }
     fs.readFile('.' + pathName, (error, content) => {
       if (error) {
@@ -28,7 +34,8 @@ const app = http.createServer((req: http.ServerRequest, res: http.ServerResponse
     res.writeHead(200, { 'Content-Type': 'text/html' })
     res.end(fs.readFileSync('client/index.html'))
   }
-}).listen(3001)
+})
+const server = app.listen(port, '0.0.0.0')
 
 /**
  * Store of application server
@@ -255,6 +262,19 @@ io.sockets.on('connection', function (socket) {
         })
         break // case hint
       }
+      case 'timeout': {
+        /* Timeout */
+        for (var answerer in store.clients) {
+          const client = store.getClientByName(answerer)
+          if (client.hasAnswer())
+            continue
+          const socketId = client.socketId
+          io.sockets.connected[socketId].emit('msg', {
+            type: 'timeout'
+          })
+        }
+        break
+      }
       case 'answer': {
         /* Show answer */
         store.state = State.Answer
@@ -272,15 +292,15 @@ io.sockets.on('connection', function (socket) {
 
         for (var answerer in store.clients) {
           const client = store.getClientByName(answerer)
-          const a = client.answer
-          if (!client.hasAnswer()) {
-            console.log('not answered', client)
-            continue;
+
+          var right: boolean = false
+          var score: number = 0
+          if (client.hasAnswer()) {
+            const a = client.answer
+            right = quiz.isRight(a.answer)
+            score = right ? a.score : 0
           }
           client.clearAnswer();
-          const right = quiz.isRight(a.answer)
-          const score = right ? a.score : 0
-
           const cumulativeScore = client.addScore(score)
           const socketId = client.socketId
           console.log('send result to', socketId)

@@ -86,6 +86,15 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
       }
     })
   }
+  handleMasterTimeout(e: React.SyntheticEvent) {
+    e.preventDefault()
+    this.props.dispatch({
+      type: ActionType.MasterOperation,
+      payload: {
+        type: 'timeout'
+      }
+    })
+  }
 
   render() {
     const state = this.props.state
@@ -97,16 +106,27 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
       case AppState.InputName:
         topView =
           <div>
-            <h1>Welcome!!</h1>
+            <header className="row" >
+              <h1>Welcome!!</h1>
+            </header >
             <form>
-              <input type="text" name="name" value={state.myname}
-                onChange={this.handleChangeName.bind(this)} />
-              <button
-                onClick={this.handleSubmitName.bind(this)}>
-                Submit
-              </button>
+              <div className="row">
+                <label htmlFor="fieldInputName">
+                  Input your name:
+                </label>
+                <input type="text" name="name" id="fieldInputName"
+                  value={state.myname}
+                  onChange={this.handleChangeName.bind(this)} />
+              </div>
+              <div className="row">
+                <button
+                  onClick={this.handleSubmitName.bind(this)}
+                  className="button-primary">
+                  Submit
+                </button>
+              </div>
             </form>
-          </div>
+          </div >
         break
       case AppState.StandBy:
         topView =
@@ -118,26 +138,34 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
         topView =
           <div>
             <h1>{state.quiz.question}</h1>
-            <ol>
+            <ul id="list-choices">
               {state.quiz.choices.map((choice, i) =>
-                <li key={i}>
-                  <button onClick={this.handleChoice.bind(this, i)}>
+                <li key={i} className="row">
+                  <button onClick={this.handleChoice.bind(this, i)}
+                    className="one-half">
                     {choice}
                   </button>
                 </li>
               )}
-            </ol>
-            <ol>
+            </ul>
+            <ul id="list-hints" className="row">
               {state.quiz.hints.map((hint, i) =>
-                <li key={i}>{hint}</li>
+                <li key={i} className="six columns">{hint}</li>
               )}
-            </ol>
+            </ul>
           </div>
         break
       case AppState.Answered:
         topView =
-          <div>
+          <div className="row">
             <h1>Answered!!</h1>
+            <p>Please wait a result.</p>
+          </div>
+        break
+      case AppState.Timeout:
+        topView =
+          <div className="row">
+            <h1>Timeout!!</h1>
             <p>Please wait a result.</p>
           </div>
         break
@@ -147,7 +175,7 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
           <div>
             <h1>{message}</h1>
             <h2>{state.quiz.question}</h2>
-            <p>{state.result.answer}</p>
+            <h3>{state.result.answer}</h3>
           </div>
         break
       case AppState.End:
@@ -157,6 +185,7 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
           </div>
         break
       default:
+        console.error('unknown mode')
         topView =
           <div>
             <h1>Unknown mode</h1>
@@ -165,26 +194,27 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
     switch (state.appState) {
       case AppState.InputName:
       case AppState.End:
-        headerView = <header></header>
+        headerView = <nav></nav>
         break
       case AppState.StandBy:
       case AppState.Question:
       case AppState.Answered:
+      case AppState.Timeout:
       case AppState.Result:
         headerView =
-          <header>
-            <p>Name: {state.myname}, Score: {state.cumulativeScore}</p>
-          </header>
+          <nav id="navbar-answerer">
+            <p>Player Name: {state.myname}, Score: {state.cumulativeScore}</p>
+          </nav>
         break
       default:
-        topView = <header></header>
+        topView = <nav></nav>
     }
 
     var mainView: any
 
     if (state.masterMode) {
       mainView =
-        <div id="masterMode">
+        <div id="master-view" className="container">
           <h1>Master mode</h1>
           <p>
             <button onClick={this.handleMasterReset.bind(this)}>Reset</button>
@@ -193,36 +223,47 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
           {Config.quizzes.map((q, i) =>
             <div>
               <section>
-                <h2>Question {i}:</h2>
+                <h2>Question {i}</h2>
                 <button onClick={this.handleMasterQuestion.bind(this, q.quiz)}>
                   {q.quiz.question}
                 </button>
                 <p>Score: {q.quiz.score}</p>
               </section>
               <section>
-                <h2>Hints:</h2>
-                <ul>
+                <h2>Hints</h2>
+                <ul id="master-list-hints" className="row">
                   {q.hints.map((hint, j) =>
-                    <li>
+                    <li className="row">
                       <button onClick={this.handleMasterHint.bind(this, hint.hint, hint.score)}>
-                        {hint.hint}(Score: {hint.score})
-                    </button>
+                        {hint.hint}\ (Score: {hint.score})
+                      </button>
                     </li>
                   )}
                 </ul>
               </section>
               <section>
+                <h2>Timeout</h2>
+                <ul id="master-list-timeout" className="row">
+                  <li className="row">
+                    <button onClick={this.handleMasterTimeout.bind(this)}
+                      className="button-primary">
+                      Timeout
+                    </button>
+                  </li>
+                </ul>
+              </section>
+              <section>
                 <h2>Answer</h2>
-                <ul>
-                  {q.quiz.choices.map((choice, c) =>
-                    c == q.rightChoice ?
-                      <li>
-                        <button onClick={this.handleMasterChoice.bind(this, q.rightChoice)}>
-                          {choice}
-                        </button>
-                      </li> :
-                      <li>{choice}</li>
-                  )}
+                <ul id="master-list-choices" className="row">
+                  {q.quiz.choices.map((choice, c) => {
+                    const className = c == q.rightChoice ? "button-primary" : ""
+                    return <li key={c}>
+                      <button onClick={this.handleMasterChoice.bind(this, c)}
+                        className={className}>
+                        {choice}
+                      </button>
+                    </li>
+                  })}
                 </ul>
               </section>
             </div>
@@ -230,16 +271,14 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
         </div>
     } else {
       mainView =
-        <div id="answererMode">
+        <div id="answerer-view" className="container">
           {headerView}
-          <section>
-            {topView}
-          </section>
+          {topView}
         </div>
     }
 
     return (
-      <div id="mainView">
+      <div id="main-view">
         {mainView}
       </div>
     )

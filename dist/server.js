@@ -6,6 +6,7 @@ var http = require('http');
 /**
  * HTTP Server
  */
+var port = process.env.PORT || 3001;
 var app = http.createServer(function (req, res) {
     var pathName = url.parse(req.url).pathname;
     if (pathName.indexOf('/public') == 0) {
@@ -14,6 +15,10 @@ var app = http.createServer(function (req, res) {
             case '.js':
             case '.map':
                 contentType = 'text/javascript';
+                break;
+            case '.css':
+                contentType = 'text/css';
+                break;
         }
         fs.readFile('.' + pathName, function (error, content) {
             if (error) {
@@ -30,7 +35,8 @@ var app = http.createServer(function (req, res) {
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end(fs.readFileSync('client/index.html'));
     }
-}).listen(3001);
+});
+var server = app.listen(port, '0.0.0.0');
 /**
  * Store of application server
  */
@@ -242,6 +248,19 @@ io.sockets.on('connection', function (socket) {
                 });
                 break; // case hint
             }
+            case 'timeout': {
+                /* Timeout */
+                for (var answerer in store.clients) {
+                    var client_2 = store.getClientByName(answerer);
+                    if (client_2.hasAnswer())
+                        continue;
+                    var socketId = client_2.socketId;
+                    io.sockets.connected[socketId].emit('msg', {
+                        type: 'timeout'
+                    });
+                }
+                break;
+            }
             case 'answer': {
                 /* Show answer */
                 store.state = State.Answer;
@@ -257,23 +276,23 @@ io.sockets.on('connection', function (socket) {
                 }
                 quiz.rightChoice = answer;
                 for (var answerer in store.clients) {
-                    var client_2 = store.getClientByName(answerer);
-                    var a = client_2.answer;
-                    if (!client_2.hasAnswer()) {
-                        console.log('not answered', client_2);
-                        continue;
+                    var client_3 = store.getClientByName(answerer);
+                    var right = false;
+                    var score = 0;
+                    if (client_3.hasAnswer()) {
+                        var a = client_3.answer;
+                        right = quiz.isRight(a.answer);
+                        score = right ? a.score : 0;
                     }
-                    client_2.clearAnswer();
-                    var right = quiz.isRight(a.answer);
-                    var score_1 = right ? a.score : 0;
-                    var cumulativeScore = client_2.addScore(score_1);
-                    var socketId = client_2.socketId;
+                    client_3.clearAnswer();
+                    var cumulativeScore = client_3.addScore(score);
+                    var socketId = client_3.socketId;
                     console.log('send result to', socketId);
                     io.sockets.connected[socketId].emit('msg', {
                         type: 'result',
                         right: right,
                         answer: quiz.showAnswer(),
-                        score: score_1,
+                        score: score,
                         cumulativeScore: cumulativeScore
                     });
                 }

@@ -6,7 +6,6 @@ import thunk from 'redux-thunk'
 import { Provider, connect } from 'react-redux'
 import { Quiz, Result, QuizBoxState, AppState, Action, ActionType } from './Models'
 import { QuizBox } from './components/QuizBox'
-import Config from './Config'
 
 var socket: SocketIOClient.Socket = null
 
@@ -29,7 +28,6 @@ function render(root: Element, store: Redux.Store<QuizBoxState>) {
       quiz: null,
       result: null,
       cumulativeScore: 0,
-      masterMode: false
     }
     const store: Redux.Store<QuizBoxState> = Redux.createStore(
       reducer,
@@ -156,14 +154,11 @@ export
       })
     case ActionType.SubmitName:
       const answerer = (action as Action<string>).payload
-      const masterMode: boolean = answerer == Config.masterName
       socket.emit('msg', {
         type: 'join',
         answerer: answerer
       })
-      return assign({}, state, {
-        masterMode: masterMode
-      })
+      return assign({}, state)
     case ActionType.SubmitAnswer:
       const answer = (action as Action<string>).payload
       socket.emit('msg', {
@@ -196,11 +191,6 @@ export
         result: assign({}, result),
         cumulativeScore: result.cumulativeScore
       })
-    case ActionType.MasterOperation:
-      const msg = action.payload
-      console.log('master operation', msg)
-      socket.emit('msg', msg)
-      return assign({}, state)
     default:
       return state
   }

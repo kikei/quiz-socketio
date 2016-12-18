@@ -53,7 +53,6 @@
 	var react_redux_1 = __webpack_require__(69);
 	var Models_1 = __webpack_require__(82);
 	var QuizBox_1 = __webpack_require__(83);
-	var Config_1 = __webpack_require__(84);
 	var socket = null;
 	function render(root, store) {
 	    var App = react_redux_1.connect(function (state) { return { state: state }; })(QuizBox_1.QuizBox);
@@ -67,7 +66,6 @@
 	            quiz: null,
 	            result: null,
 	            cumulativeScore: 0,
-	            masterMode: false
 	        };
 	        var store = Redux.createStore(reducer, preloadedState, Redux.applyMiddleware(redux_thunk_1.default));
 	        listenSocket(store);
@@ -171,7 +169,7 @@
 	/**
 	 * QuizReducer
 	 */
-	var assign = __webpack_require__(85);
+	var assign = __webpack_require__(84);
 	function reducer(state, action) {
 	    switch (action.type) {
 	        case Models_1.ActionType.ChangeAppState:
@@ -184,14 +182,11 @@
 	            });
 	        case Models_1.ActionType.SubmitName:
 	            var answerer = action.payload;
-	            var masterMode = answerer == Config_1.default.masterName;
 	            socket.emit('msg', {
 	                type: 'join',
 	                answerer: answerer
 	            });
-	            return assign({}, state, {
-	                masterMode: masterMode
-	            });
+	            return assign({}, state);
 	        case Models_1.ActionType.SubmitAnswer:
 	            var answer = action.payload;
 	            socket.emit('msg', {
@@ -223,11 +218,6 @@
 	                result: assign({}, result),
 	                cumulativeScore: result.cumulativeScore
 	            });
-	        case Models_1.ActionType.MasterOperation:
-	            var msg = action.payload;
-	            console.log('master operation', msg);
-	            socket.emit('msg', msg);
-	            return assign({}, state);
 	        default:
 	            return state;
 	    }
@@ -9907,7 +9897,6 @@
 	};
 	var React = __webpack_require__(51);
 	var Models_1 = __webpack_require__(82);
-	var Config_1 = __webpack_require__(84);
 	var QuizBox = (function (_super) {
 	    __extends(QuizBox, _super);
 	    function QuizBox() {
@@ -9938,67 +9927,6 @@
 	            payload: Models_1.AppState.Answered
 	        });
 	    };
-	    QuizBox.prototype.handleMasterReset = function (e) {
-	        e.preventDefault();
-	        this.props.dispatch({
-	            type: Models_1.ActionType.MasterOperation,
-	            payload: {
-	                type: 'reset'
-	            }
-	        });
-	    };
-	    QuizBox.prototype.handleMasterEnd = function (e) {
-	        e.preventDefault();
-	        this.props.dispatch({
-	            type: Models_1.ActionType.MasterOperation,
-	            payload: {
-	                type: 'end'
-	            }
-	        });
-	    };
-	    QuizBox.prototype.handleMasterQuestion = function (quiz, e) {
-	        e.preventDefault();
-	        this.props.dispatch({
-	            type: Models_1.ActionType.MasterOperation,
-	            payload: {
-	                type: 'question',
-	                question: quiz.question,
-	                choiceType: quiz.getChoiceTypeAsString(),
-	                choices: quiz.choices,
-	                score: quiz.score
-	            }
-	        });
-	    };
-	    QuizBox.prototype.handleMasterChoice = function (rightChoice, e) {
-	        e.preventDefault();
-	        this.props.dispatch({
-	            type: Models_1.ActionType.MasterOperation,
-	            payload: {
-	                type: 'answer',
-	                answer: rightChoice
-	            }
-	        });
-	    };
-	    QuizBox.prototype.handleMasterHint = function (hint, score, e) {
-	        e.preventDefault();
-	        this.props.dispatch({
-	            type: Models_1.ActionType.MasterOperation,
-	            payload: {
-	                type: 'hint',
-	                hint: hint,
-	                score: score
-	            }
-	        });
-	    };
-	    QuizBox.prototype.handleMasterTimeout = function (e) {
-	        e.preventDefault();
-	        this.props.dispatch({
-	            type: Models_1.ActionType.MasterOperation,
-	            payload: {
-	                type: 'timeout'
-	            }
-	        });
-	    };
 	    QuizBox.prototype.makeChoiceView = function (quiz) {
 	        var _this = this;
 	        switch (quiz.choiceType) {
@@ -10013,7 +9941,6 @@
 	        }
 	    };
 	    QuizBox.prototype.render = function () {
-	        var _this = this;
 	        var state = this.props.state;
 	        var topView;
 	        var headerView;
@@ -10109,45 +10036,7 @@
 	            default:
 	                topView = React.createElement("nav", null);
 	        }
-	        var mainView;
-	        if (state.masterMode) {
-	            mainView =
-	                React.createElement("div", {id: "master-view", className: "container"}, React.createElement("h1", null, "Master mode"), React.createElement("p", null, React.createElement("button", {onClick: this.handleMasterReset.bind(this)}, "Reset"), React.createElement("button", {onClick: this.handleMasterEnd.bind(this)}, "End")), Config_1.default.quizzes.map(function (q, i) {
-	                    var choiceView;
-	                    switch (q.quiz.choiceType) {
-	                        case Models_1.ChoiceType.Text:
-	                            choiceView =
-	                                React.createElement("ul", {id: "master-list-choices", className: "row"}, q.quiz.choices.map(function (choice, c) {
-	                                    var className = c == q.answer.rightChoice ? "button-primary" : "";
-	                                    return React.createElement("li", {key: c}, React.createElement("button", {onClick: _this.handleMasterChoice.bind(_this, c), className: className}, choice));
-	                                }));
-	                            break;
-	                        case Models_1.ChoiceType.Image:
-	                            choiceView =
-	                                React.createElement("ul", {id: "master-list-choices", className: "row"}, q.quiz.choices.map(function (choice, c) {
-	                                    var className = c == q.answer.rightChoice ? "button-primary" : "";
-	                                    return React.createElement("li", {key: c}, React.createElement("input", {type: "image", src: choice, onClick: _this.handleMasterChoice.bind(_this, c), className: className}));
-	                                }));
-	                            break;
-	                    }
-	                    var hintsView;
-	                    if (q.quiz.hints.length > 0) {
-	                        hintsView =
-	                            React.createElement("section", null, React.createElement("h2", null, "Hints"), React.createElement("ul", {id: "master-list-hints", className: "row"}, q.quiz.hints.map(function (hint, j) {
-	                                return React.createElement("li", {className: "row"}, React.createElement("button", {onClick: _this.handleMasterHint.bind(_this, hint.hint, hint.score)}, hint.hint, "(Score: ", hint.score, ")"));
-	                            })));
-	                    }
-	                    else {
-	                        hintsView = React.createElement("section", null);
-	                    }
-	                    return React.createElement("div", null, React.createElement("section", null, React.createElement("h2", null, "Question ", i + 1), React.createElement("button", {onClick: _this.handleMasterQuestion.bind(_this, q.quiz)}, q.quiz.question), React.createElement("p", null, "Score: ", q.quiz.score)), hintsView, React.createElement("section", null, React.createElement("h2", null, "Timeout"), React.createElement("ul", {id: "master-list-timeout", className: "row"}, React.createElement("li", {className: "row"}, React.createElement("button", {onClick: _this.handleMasterTimeout.bind(_this), className: "button-primary"}, "Timeout")))), React.createElement("section", null, React.createElement("h2", null, "Answer"), choiceView));
-	                }));
-	        }
-	        else {
-	            mainView =
-	                React.createElement("div", {id: "answerer-view", className: "container"}, headerView, React.createElement("div", {id: "answerer-content"}, topView));
-	        }
-	        return (React.createElement("div", {id: "main-view"}, mainView));
+	        return (React.createElement("div", {id: "main-view"}, React.createElement("div", {id: "answerer-view", className: "container"}, headerView, React.createElement("div", {id: "answerer-content"}, topView))));
 	    };
 	    return QuizBox;
 	}(React.Component));
@@ -10156,54 +10045,6 @@
 
 /***/ },
 /* 84 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	var Models_1 = __webpack_require__(82);
-	var Config = (function () {
-	    function Config() {
-	    }
-	    Config.masterName = 'master';
-	    Config.quizzes = [
-	        new Models_1.QuizAnswer({
-	            quiz: {
-	                question: 'What has four legs and a back but no body?',
-	                score: 10,
-	                choiceType: 'text',
-	                choices: ['Door', 'Chair', 'Spoon'],
-	                hints: [
-	                    { hint: 'Hint1', score: 5 },
-	                    { hint: 'Hint2', score: 3 }
-	                ],
-	            },
-	            answer: {
-	                comment: 'Comment',
-	                rightChoice: 1
-	            }
-	        }),
-	        new Models_1.QuizAnswer({
-	            quiz: {
-	                question: 'Whice is green?',
-	                score: 10,
-	                choiceType: 'image',
-	                choices: [
-	                    '/public/choice1.png', '/public/choice2.png',
-	                    '/public/choice3.png', '/public/choice4.png'],
-	            },
-	            answer: {
-	                comment: 'Comment',
-	                rightChoice: 3
-	            }
-	        })
-	    ];
-	    return Config;
-	}());
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.default = Config;
-
-
-/***/ },
-/* 85 */
 /***/ function(module, exports) {
 
 	'use strict';

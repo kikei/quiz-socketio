@@ -4,6 +4,7 @@ var url = require('url');
 var path = require('path');
 var http = require('http');
 var Models_1 = require('./Models');
+var View = require('./View');
 /**
  * HTTP Server
  */
@@ -32,88 +33,22 @@ var app = http.createServer(function (req, res) {
             }
         });
     }
+    else if (pathName.indexOf('/master') == 0) {
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(fs.readFileSync('client/master.html'));
+    }
+    else if (pathName.indexOf('/ranking') == 0) {
+        var content = View.getRanking(store);
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(JSON.stringify(content), 'utf-8');
+    }
     else {
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end(fs.readFileSync('client/index.html'));
     }
 });
 var server = app.listen(port, '0.0.0.0');
-/**
- * Store of application server
- */
-var Answer = (function () {
-    function Answer(answer, score, date) {
-        this.answer = answer;
-        this.score = score;
-        this.date = date;
-    }
-    return Answer;
-}());
-exports.Answer = Answer;
-var Client = (function () {
-    function Client(answerer, socketId) {
-        this.answerer = answerer;
-        this.socketId = socketId;
-        this.cumulativeScore = 0;
-        this.thinkedTime = 0;
-        this.answer = null;
-    }
-    Client.prototype.addScore = function (score) {
-        this.cumulativeScore += score;
-        return this.cumulativeScore;
-    };
-    Client.prototype.addThinkedTime = function (millis) {
-        this.thinkedTime += millis;
-        return this.thinkedTime;
-    };
-    Client.prototype.hasAnswer = function () {
-        return !!this.answer;
-    };
-    Client.prototype.clearAnswer = function () {
-        this.answer = null;
-    };
-    return Client;
-}());
-exports.Client = Client;
-/**
- * Global storage
- */
-var State;
-(function (State) {
-    State[State["StandBy"] = 0] = "StandBy";
-    State[State["Question"] = 1] = "Question";
-    State[State["Answer"] = 2] = "Answer";
-    State[State["End"] = 3] = "End";
-})(State || (State = {}));
-var Store = (function () {
-    function Store() {
-        this.state = State.StandBy;
-        this.currentQuiz = null;
-        this.clients = {};
-    }
-    Store.prototype.reset = function () {
-        this.state = State.StandBy;
-        this.currentQuiz = null;
-        this.clients = {};
-    };
-    Store.prototype.getClientByName = function (name) {
-        return this.clients[name];
-    };
-    Store.prototype.addClient = function (answerer, socketId) {
-        var client = this.clients[answerer];
-        if (client) {
-            client.socketId = socketId;
-        }
-        else {
-            client = new Client(answerer, socketId);
-            this.clients[answerer] = client;
-        }
-        return client;
-    };
-    return Store;
-}());
-exports.Store = Store;
-var store = new Store();
+var store = new Models_1.Store();
 /**
  * Communication on socket
  */
@@ -144,8 +79,8 @@ io.sockets.on('connection', function (socket) {
                 var client_1 = store.addClient(answerer_1, socketId);
                 var state = store.state;
                 switch (state) {
-                    case State.StandBy:
-                    case State.Answer: {
+                    case Models_1.State.StandBy:
+                    case Models_1.State.Answer: {
                         var socket_1 = io.sockets.connected[socketId];
                         if (socket_1)
                             socket_1.emit('msg', {
@@ -156,7 +91,7 @@ io.sockets.on('connection', function (socket) {
                             });
                         break;
                     }
-                    case State.Question: {
+                    case Models_1.State.Question: {
                         var socket_2 = io.sockets.connected[socketId];
                         if (socket_2)
                             socket_2.emit('msg', {
@@ -183,7 +118,7 @@ io.sockets.on('connection', function (socket) {
                 console.log('myanswer', quiz);
                 var score = quiz.score;
                 var client = store.getClientByName(answerer_2);
-                client.answer = new Answer(answer_1, score, Date.now());
+                client.answer = new Models_1.Answer(answer_1, score, Date.now());
                 break; // case myanswer
             }
             /**
@@ -200,7 +135,7 @@ io.sockets.on('connection', function (socket) {
             }
             case 'question': {
                 /* Ask a question */
-                store.state = State.Question;
+                store.state = Models_1.State.Question;
                 var question = data.question;
                 var choiceType = data.choiceType;
                 var choices = data.choices;
@@ -256,7 +191,7 @@ io.sockets.on('connection', function (socket) {
             }
             case 'answer': {
                 /* Show answer */
-                store.state = State.Answer;
+                store.state = Models_1.State.Answer;
                 var answer = data.answer;
                 if (!answer && answer != 0) {
                     console.error('bad data', answer);
@@ -319,7 +254,7 @@ io.sockets.on('connection', function (socket) {
             }
             case 'end': {
                 /* End game */
-                store.state = State.End;
+                store.state = Models_1.State.End;
                 io.sockets.emit('msg', {
                     type: 'end'
                 });

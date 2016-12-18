@@ -1,7 +1,6 @@
 import { QuizAnswer } from './Models'
 
 export default class Config {
-  public static masterName: string = 'master'
   public static quizzes: QuizAnswer[] = [
     new QuizAnswer({
       quiz: {

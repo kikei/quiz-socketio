@@ -1,6 +1,7 @@
 module.exports = {
     entry: {
-      quiz: "./src/quiz.tsx"
+      quiz: "./src/quiz.tsx",
+      "quiz-master": "./src/quiz-master.tsx"
     },
   
     output: {

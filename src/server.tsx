@@ -3,7 +3,8 @@ import url = require('url')
 import path = require('path')
 import http = require('http')
 
-import { Quiz } from './Models'
+import { Answer, Client, Quiz, State, Store } from './Models'
+import * as View from './View'
 
 /**
  * HTTP Server
@@ -32,94 +33,19 @@ const app = http.createServer((req: http.ServerRequest, res: http.ServerResponse
         res.end(content, 'utf-8')
       }
     })
+  } else if (pathName.indexOf('/master') == 0) {
+    res.writeHead(200, { 'Content-Type': 'text/html' })
+    res.end(fs.readFileSync('client/master.html'))
+  } else if (pathName.indexOf('/ranking') == 0) {
+    const content = View.getRanking(store)
+    res.writeHead(200, { 'Content-Type': 'text/html' })
+    res.end(JSON.stringify(content), 'utf-8')
   } else {
     res.writeHead(200, { 'Content-Type': 'text/html' })
     res.end(fs.readFileSync('client/index.html'))
   }
 })
 const server = app.listen(port, '0.0.0.0')
-
-/**
- * Store of application server
- */
-export class Answer {
-  answer: number
-  score: number
-  date: number
-  constructor(answer: number, score: number, date: number) {
-    this.answer = answer
-    this.score = score
-    this.date = date
-  }
-}
-
-export class Client {
-  public answerer: string
-  public socketId: string
-  public cumulativeScore: number
-  public thinkedTime: number
-  public answer: Answer
-  constructor(answerer: string, socketId: string) {
-    this.answerer = answerer
-    this.socketId = socketId
-    this.cumulativeScore = 0
-    this.thinkedTime = 0
-    this.answer = null
-  }
-  public addScore(score: number) {
-    this.cumulativeScore += score
-    return this.cumulativeScore
-  }
-  public addThinkedTime(millis: number) {
-    this.thinkedTime += millis
-    return this.thinkedTime
-  }
-  public hasAnswer() {
-    return !!this.answer
-  }
-  public clearAnswer() {
-    this.answer = null
-  }
-}
-
-/**
- * Global storage
- */
-enum State {
-  StandBy,
-  Question,
-  Answer,
-  End
-}
-
-export class Store {
-  state: State
-  currentQuiz: Quiz
-  clients: { [answerer: string]: Client }
-  constructor() {
-    this.state = State.StandBy
-    this.currentQuiz = null
-    this.clients = {}
-  }
-  public reset() {
-    this.state = State.StandBy
-    this.currentQuiz = null
-    this.clients = {}
-  }
-  public getClientByName(name: string) {
-    return this.clients[name];
-  }
-  public addClient(answerer: string, socketId: string) {
-    var client: Client = this.clients[answerer]
-    if (client) {
-      client.socketId = socketId
-    } else {
-      client = new Client(answerer, socketId)
-      this.clients[answerer] = client
-    }
-    return client
-  }
-}
 
 const store = new Store();
 

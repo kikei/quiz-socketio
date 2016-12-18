@@ -91,7 +91,9 @@ export interface QuizBoxState {
   quiz: Quiz,
   result: Result,
   cumulativeScore: number,
-  masterMode: boolean
+}
+
+export interface MasterControlState {
 }
 
 /** Actions **/

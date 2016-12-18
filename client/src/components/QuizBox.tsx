@@ -310,6 +310,25 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
                   </ul>
                 break
             }
+            var hintsView: any
+            if (q.quiz.hints.length > 0) {
+              hintsView =
+                <section>
+                  <h2>Hints</h2>
+                  <ul id="master-list-hints" className="row">
+                    {q.quiz.hints.map((hint, j) =>
+                      <li className="row">
+                        <button onClick={this.handleMasterHint.bind(this, hint.hint, hint.score)}>
+                          {hint.hint}(Score: {hint.score})
+                          </button>
+                      </li>
+                    )}
+                  </ul>
+                </section>
+            } else {
+              hintsView = <section></section>
+            }
+
             return <div>
               <section>
                 <h2>Question {i + 1}</h2>
@@ -318,18 +337,7 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
                 </button>
                 <p>Score: {q.quiz.score}</p>
               </section>
-              <section>
-                <h2>Hints</h2>
-                <ul id="master-list-hints" className="row">
-                  {q.quiz.hints.map((hint, j) =>
-                    <li className="row">
-                      <button onClick={this.handleMasterHint.bind(this, hint.hint, hint.score)}>
-                        {hint.hint}(Score: {hint.score})
-                      </button>
-                    </li>
-                  )}
-                </ul>
-              </section>
+              {hintsView}
               <section>
                 <h2>Timeout</h2>
                 <ul id="master-list-timeout" className="row">

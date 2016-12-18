@@ -10130,9 +10130,17 @@
 	                                }));
 	                            break;
 	                    }
-	                    return React.createElement("div", null, React.createElement("section", null, React.createElement("h2", null, "Question ", i + 1), React.createElement("button", {onClick: _this.handleMasterQuestion.bind(_this, q.quiz)}, q.quiz.question), React.createElement("p", null, "Score: ", q.quiz.score)), React.createElement("section", null, React.createElement("h2", null, "Hints"), React.createElement("ul", {id: "master-list-hints", className: "row"}, q.quiz.hints.map(function (hint, j) {
-	                        return React.createElement("li", {className: "row"}, React.createElement("button", {onClick: _this.handleMasterHint.bind(_this, hint.hint, hint.score)}, hint.hint, "(Score: ", hint.score, ")"));
-	                    }))), React.createElement("section", null, React.createElement("h2", null, "Timeout"), React.createElement("ul", {id: "master-list-timeout", className: "row"}, React.createElement("li", {className: "row"}, React.createElement("button", {onClick: _this.handleMasterTimeout.bind(_this), className: "button-primary"}, "Timeout")))), React.createElement("section", null, React.createElement("h2", null, "Answer"), choiceView));
+	                    var hintsView;
+	                    if (q.quiz.hints.length > 0) {
+	                        hintsView =
+	                            React.createElement("section", null, React.createElement("h2", null, "Hints"), React.createElement("ul", {id: "master-list-hints", className: "row"}, q.quiz.hints.map(function (hint, j) {
+	                                return React.createElement("li", {className: "row"}, React.createElement("button", {onClick: _this.handleMasterHint.bind(_this, hint.hint, hint.score)}, hint.hint, "(Score: ", hint.score, ")"));
+	                            })));
+	                    }
+	                    else {
+	                        hintsView = React.createElement("section", null);
+	                    }
+	                    return React.createElement("div", null, React.createElement("section", null, React.createElement("h2", null, "Question ", i + 1), React.createElement("button", {onClick: _this.handleMasterQuestion.bind(_this, q.quiz)}, q.quiz.question), React.createElement("p", null, "Score: ", q.quiz.score)), hintsView, React.createElement("section", null, React.createElement("h2", null, "Timeout"), React.createElement("ul", {id: "master-list-timeout", className: "row"}, React.createElement("li", {className: "row"}, React.createElement("button", {onClick: _this.handleMasterTimeout.bind(_this), className: "button-primary"}, "Timeout")))), React.createElement("section", null, React.createElement("h2", null, "Answer"), choiceView));
 	                }));
 	        }
 	        else {
@@ -10181,9 +10189,6 @@
 	                choices: [
 	                    '/public/choice1.png', '/public/choice2.png',
 	                    '/public/choice3.png', '/public/choice4.png'],
-	                hints: [
-	                    { hint: 'Hint1', score: 5 },
-	                ],
 	            },
 	            answer: {
 	                comment: 'Comment',

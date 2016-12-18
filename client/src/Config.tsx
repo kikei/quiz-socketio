@@ -27,9 +27,6 @@ export default class Config {
         choices: [
           '/public/choice1.png', '/public/choice2.png',
           '/public/choice3.png', '/public/choice4.png'],
-        hints: [
-          { hint: 'Hint1', score: 5 },
-        ],
       },
       answer: {
         comment: 'Comment',

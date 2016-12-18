@@ -1,6 +1,6 @@
 import * as React from "react"
 import * as Redux from 'redux'
-import { Quiz, QuizBoxState, AppState, ActionType } from '../Models'
+import { Quiz, QuizAnswer, ChoiceType, QuizBoxState, AppState, ActionType } from '../Models'
 import Config from '../Config'
 
 export interface QuizBoxProps {
@@ -59,6 +59,7 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
       payload: {
         type: 'question',
         question: quiz.question,
+        choiceType: quiz.getChoiceTypeAsString(),
         choices: quiz.choices,
         score: quiz.score
       }
@@ -220,8 +221,32 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
             <button onClick={this.handleMasterReset.bind(this)}>Reset</button>
             <button onClick={this.handleMasterEnd.bind(this)}>End</button>
           </p>
-          {Config.quizzes.map((q, i) =>
-            <div>
+          {Config.quizzes.map((q, i) => {
+            var choiceView: any
+            switch (q.quiz.choiceType) {
+              case ChoiceType.Text:
+                choiceView =
+                  <ul id="master-list-choices" className="row">
+                    {q.quiz.choices.map((choice, c) => {
+                      console.log(q.quiz, q.answer, c)
+                      const className =
+                        c == q.answer.rightChoice ? "button-primary" : ""
+                      return <li key={c}>
+                        <button onClick={this.handleMasterChoice.bind(this, c)}
+                          className={className}>
+                          {choice}
+                        </button>
+                      </li>
+                    })}
+                  </ul>
+                break
+              case ChoiceType.Image:
+                choiceView =
+                  <ul id="master-list-choices" className="row">
+                    <li>Images</li>
+                  </ul>
+            }
+            return <div>
               <section>
                 <h2>Question {i}</h2>
                 <button onClick={this.handleMasterQuestion.bind(this, q.quiz)}>
@@ -232,10 +257,10 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
               <section>
                 <h2>Hints</h2>
                 <ul id="master-list-hints" className="row">
-                  {q.hints.map((hint, j) =>
+                  {q.quiz.hints.map((hint, j) =>
                     <li className="row">
                       <button onClick={this.handleMasterHint.bind(this, hint.hint, hint.score)}>
-                        {hint.hint}\ (Score: {hint.score})
+                        {hint.hint}(Score: {hint.score})
                       </button>
                     </li>
                   )}
@@ -254,20 +279,10 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
               </section>
               <section>
                 <h2>Answer</h2>
-                <ul id="master-list-choices" className="row">
-                  {q.quiz.choices.map((choice, c) => {
-                    const className = c == q.rightChoice ? "button-primary" : ""
-                    return <li key={c}>
-                      <button onClick={this.handleMasterChoice.bind(this, c)}
-                        className={className}>
-                        {choice}
-                      </button>
-                    </li>
-                  })}
-                </ul>
+                {choiceView}
               </section>
             </div>
-          )}
+          })}
         </div>
     } else {
       mainView =

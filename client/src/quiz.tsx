@@ -183,12 +183,10 @@ export
       return assign({}, state, { quiz: quiz })
     case ActionType.AddHint:
       const data = (action as Action<{ hint: string, score: number }>).payload
-      const hint = data.hint
-      const score = data.score
-      console.log('received hint', hint, score)
+      console.log('received hint', data.hint, data.score)
       return assign({}, state, {
         quiz: assign({}, state.quiz, {
-          hints: [hint].concat(state.quiz.hints),
+          hints: [data].concat(state.quiz.hints),
         })
       })
     case ActionType.Result:

@@ -210,12 +210,10 @@
 	            return assign({}, state, { quiz: quiz });
 	        case Models_1.ActionType.AddHint:
 	            var data = action.payload;
-	            var hint = data.hint;
-	            var score = data.score;
-	            console.log('received hint', hint, score);
+	            console.log('received hint', data.hint, data.score);
 	            return assign({}, state, {
 	                quiz: assign({}, state.quiz, {
-	                    hints: [hint].concat(state.quiz.hints),
+	                    hints: [data].concat(state.quiz.hints),
 	                })
 	            });
 	        case Models_1.ActionType.Result:
@@ -9811,16 +9809,57 @@
 
 	"use strict";
 	/** Models **/
+	(function (ChoiceType) {
+	    ChoiceType[ChoiceType["Text"] = 0] = "Text";
+	    ChoiceType[ChoiceType["Image"] = 1] = "Image";
+	})(exports.ChoiceType || (exports.ChoiceType = {}));
+	var ChoiceType = exports.ChoiceType;
 	var Quiz = (function () {
 	    function Quiz(data) {
 	        this.question = data['question'] || '';
+	        this.choiceType = this.choiceTypeFromString(data['choiceType']);
 	        this.choices = data['choices'] || [];
 	        this.hints = data['hints'] || [];
 	        this.score = data['score'] || 0;
 	    }
+	    Quiz.prototype.choiceTypeFromString = function (choiceType) {
+	        switch (choiceType) {
+	            case 'text':
+	                return ChoiceType.Text;
+	            case 'image':
+	                return ChoiceType.Image;
+	            default:
+	                console.error('invalid choice type:', choiceType);
+	                return null;
+	        }
+	    };
+	    Quiz.prototype.getChoiceTypeAsString = function () {
+	        switch (this.choiceType) {
+	            case ChoiceType.Text:
+	                return 'text';
+	            case ChoiceType.Image:
+	                return 'image';
+	        }
+	    };
 	    return Quiz;
 	}());
 	exports.Quiz = Quiz;
+	var Answer = (function () {
+	    function Answer(data) {
+	        this.comment = data.comment;
+	        this.rightChoice = data.rightChoice;
+	    }
+	    return Answer;
+	}());
+	exports.Answer = Answer;
+	var QuizAnswer = (function () {
+	    function QuizAnswer(data) {
+	        this.quiz = new Quiz(data.quiz);
+	        this.answer = new Answer(data.answer);
+	    }
+	    return QuizAnswer;
+	}());
+	exports.QuizAnswer = QuizAnswer;
 	var Result = (function () {
 	    function Result(data) {
 	        this.right = data.right;
@@ -9923,6 +9962,7 @@
 	            payload: {
 	                type: 'question',
 	                question: quiz.question,
+	                choiceType: quiz.getChoiceTypeAsString(),
 	                choices: quiz.choices,
 	                score: quiz.score
 	            }
@@ -10022,12 +10062,23 @@
 	        if (state.masterMode) {
 	            mainView =
 	                React.createElement("div", {id: "master-view", className: "container"}, React.createElement("h1", null, "Master mode"), React.createElement("p", null, React.createElement("button", {onClick: this.handleMasterReset.bind(this)}, "Reset"), React.createElement("button", {onClick: this.handleMasterEnd.bind(this)}, "End")), Config_1.default.quizzes.map(function (q, i) {
-	                    return React.createElement("div", null, React.createElement("section", null, React.createElement("h2", null, "Question ", i), React.createElement("button", {onClick: _this.handleMasterQuestion.bind(_this, q.quiz)}, q.quiz.question), React.createElement("p", null, "Score: ", q.quiz.score)), React.createElement("section", null, React.createElement("h2", null, "Hints"), React.createElement("ul", {id: "master-list-hints", className: "row"}, q.hints.map(function (hint, j) {
-	                        return React.createElement("li", {className: "row"}, React.createElement("button", {onClick: _this.handleMasterHint.bind(_this, hint.hint, hint.score)}, hint.hint, "\\ (Score: ", hint.score, ")"));
-	                    }))), React.createElement("section", null, React.createElement("h2", null, "Timeout"), React.createElement("ul", {id: "master-list-timeout", className: "row"}, React.createElement("li", {className: "row"}, React.createElement("button", {onClick: _this.handleMasterTimeout.bind(_this), className: "button-primary"}, "Timeout")))), React.createElement("section", null, React.createElement("h2", null, "Answer"), React.createElement("ul", {id: "master-list-choices", className: "row"}, q.quiz.choices.map(function (choice, c) {
-	                        var className = c == q.rightChoice ? "button-primary" : "";
-	                        return React.createElement("li", {key: c}, React.createElement("button", {onClick: _this.handleMasterChoice.bind(_this, c), className: className}, choice));
-	                    }))));
+	                    var choiceView;
+	                    switch (q.quiz.choiceType) {
+	                        case Models_1.ChoiceType.Text:
+	                            choiceView =
+	                                React.createElement("ul", {id: "master-list-choices", className: "row"}, q.quiz.choices.map(function (choice, c) {
+	                                    console.log(q.quiz, q.answer, c);
+	                                    var className = c == q.answer.rightChoice ? "button-primary" : "";
+	                                    return React.createElement("li", {key: c}, React.createElement("button", {onClick: _this.handleMasterChoice.bind(_this, c), className: className}, choice));
+	                                }));
+	                            break;
+	                        case Models_1.ChoiceType.Image:
+	                            choiceView =
+	                                React.createElement("ul", {id: "master-list-choices", className: "row"}, React.createElement("li", null, "Images"));
+	                    }
+	                    return React.createElement("div", null, React.createElement("section", null, React.createElement("h2", null, "Question ", i), React.createElement("button", {onClick: _this.handleMasterQuestion.bind(_this, q.quiz)}, q.quiz.question), React.createElement("p", null, "Score: ", q.quiz.score)), React.createElement("section", null, React.createElement("h2", null, "Hints"), React.createElement("ul", {id: "master-list-hints", className: "row"}, q.quiz.hints.map(function (hint, j) {
+	                        return React.createElement("li", {className: "row"}, React.createElement("button", {onClick: _this.handleMasterHint.bind(_this, hint.hint, hint.score)}, hint.hint, "(Score: ", hint.score, ")"));
+	                    }))), React.createElement("section", null, React.createElement("h2", null, "Timeout"), React.createElement("ul", {id: "master-list-timeout", className: "row"}, React.createElement("li", {className: "row"}, React.createElement("button", {onClick: _this.handleMasterTimeout.bind(_this), className: "button-primary"}, "Timeout")))), React.createElement("section", null, React.createElement("h2", null, "Answer"), choiceView));
 	                }));
 	        }
 	        else {
@@ -10043,33 +10094,30 @@
 
 /***/ },
 /* 84 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var QuizAnswer = (function () {
-	    function QuizAnswer(data) {
-	        this.quiz = data.quiz;
-	        this.hints = data.hints;
-	        this.rightChoice = data.rightChoice;
-	    }
-	    return QuizAnswer;
-	}());
+	var Models_1 = __webpack_require__(82);
 	var Config = (function () {
 	    function Config() {
 	    }
 	    Config.masterName = 'master';
 	    Config.quizzes = [
-	        new QuizAnswer({
+	        new Models_1.QuizAnswer({
 	            quiz: {
 	                question: 'What has four legs and a back but no body?',
+	                score: 10,
+	                choiceType: 'text',
 	                choices: ['Door', 'Chair', 'Spoon'],
-	                score: 10
+	                hints: [
+	                    { hint: 'Hint1', score: 5 },
+	                    { hint: 'Hint2', score: 3 }
+	                ],
 	            },
-	            hints: [
-	                { hint: 'Hint1', score: 5 },
-	                { hint: 'Hint2', score: 3 }
-	            ],
-	            rightChoice: 1
+	            answer: {
+	                comment: 'Comment',
+	                rightChoice: 1
+	            }
 	        })
 	    ];
 	    return Config;

@@ -46,3 +46,8 @@ $ typings install --global --save dt~react-redux
 $ typings install --global --save dt~redux-thunk
 $ typings install --global --save dt~object-assign
 ```
+
+## TODO
+
+- use History API
+- support to change name

@@ -38,6 +38,28 @@ function render(root: Element, store: Redux.Store<QuizBoxState>) {
     listenSocket(store)
 
     render(root, store)
+
+    rejoin(store)
+  }
+}
+
+/**
+ * join automatically when name has been saved
+ */
+function rejoin(store: Redux.Store<QuizBoxState>) {
+  if (window.localStorage) {
+    const answerer = localStorage.getItem('answerer')
+    console.log('saved name:', answerer)
+    if (answerer) {
+      store.dispatch({
+        type: ActionType.ChangeName,
+        payload: answerer
+      })
+      store.dispatch({
+        type: ActionType.SubmitName,
+        payload: answerer
+      })
+    }
   }
 }
 
@@ -58,6 +80,13 @@ function listenSocket(store: Redux.Store<QuizBoxState>) {
         break;
       case 'joined':
         const answerer = data.answerer
+
+        if (window.localStorage) {
+          // save name and use it when app reopened
+          console.log('save name:', answerer)
+          localStorage.setItem('answerer', answerer)
+        }
+
         const state = data.state
         switch (state) {
           case 'standby':
@@ -136,6 +165,7 @@ function listenSocket(store: Redux.Store<QuizBoxState>) {
     }
   })
 }
+
 /**
  * QuizReducer
  */

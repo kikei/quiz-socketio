@@ -70,8 +70,28 @@
 	        var store = Redux.createStore(reducer, preloadedState, Redux.applyMiddleware(redux_thunk_1.default));
 	        listenSocket(store);
 	        render(root, store);
+	        rejoin(store);
 	    }
 	};
+	/**
+	 * join automatically when name has been saved
+	 */
+	function rejoin(store) {
+	    if (window.localStorage) {
+	        var answerer = localStorage.getItem('answerer');
+	        console.log('saved name:', answerer);
+	        if (answerer) {
+	            store.dispatch({
+	                type: Models_1.ActionType.ChangeName,
+	                payload: answerer
+	            });
+	            store.dispatch({
+	                type: Models_1.ActionType.SubmitName,
+	                payload: answerer
+	            });
+	        }
+	    }
+	}
 	/**
 	 * socket listener
 	 */
@@ -88,6 +108,11 @@
 	                break;
 	            case 'joined':
 	                var answerer = data.answerer;
+	                if (window.localStorage) {
+	                    // save name and use it when app reopened
+	                    console.log('save name:', answerer);
+	                    localStorage.setItem('answerer', answerer);
+	                }
 	                var state = data.state;
 	                switch (state) {
 	                    case 'standby':

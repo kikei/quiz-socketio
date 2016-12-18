@@ -102,9 +102,8 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
       case ChoiceType.Text:
         return <ul id="list-choices">
           {quiz.choices.map((choice, i) =>
-            <li key={i} className="row">
-              <button onClick={this.handleChoice.bind(this, i)}
-                className="one-half">
+            <li key={i}>
+              <button onClick={this.handleChoice.bind(this, i)}>
                 {choice}
               </button>
             </li>
@@ -176,20 +175,25 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
         break
       case AppState.Answered:
         topView =
-          <div className="row">
+          <div>
             <h1>Answered!!</h1>
             <p>Please wait a result.</p>
           </div>
         break
       case AppState.Timeout:
         topView =
-          <div className="row">
+          <div>
             <h1>Timeout!!</h1>
             <p>Please wait a result.</p>
           </div>
         break
       case AppState.Result:
-        const message = state.result.right ? 'Yes!' : 'No!'
+        var messageView: any
+        if (state.result.right) {
+          messageView = <span className="result-yes">Yes!</span>
+        } else {
+          messageView = <span className="result-no">No!</span>
+        }
         var answerView: any;
         switch (state.quiz.choiceType) {
           case ChoiceType.Text:
@@ -203,10 +207,9 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
         }
         topView =
           <div>
-            <h1>{message}</h1>
-            <h2>{state.quiz.question}</h2>
-            <h3>Answer</h3>
-            {answerView}
+            <h1>{messageView}</h1>
+            <h2 className="result-question">Q. {state.quiz.question}</h2>
+            <h3 className="result-answer">A. {answerView}</h3>
           </div>
         break
       case AppState.End:
@@ -287,7 +290,7 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
             }
             return <div>
               <section>
-                <h2>Question {i}</h2>
+                <h2>Question {i + 1}</h2>
                 <button onClick={this.handleMasterQuestion.bind(this, q.quiz)}>
                   {q.quiz.question}
                 </button>
@@ -327,7 +330,9 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
       mainView =
         <div id="answerer-view" className="container">
           {headerView}
-          {topView}
+          <div id="answerer-content">
+            {topView}
+          </div>
         </div>
     }
 

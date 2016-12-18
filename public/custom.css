@@ -1,6 +1,23 @@
+html, body, #quiz-app, #main-view, #answerer-view {
+    height: 100%;
+}
+
+#answerer-view nav {
+    height: 2em;
+}
+
+#answerer-content {
+    height: calc(100% - 2em);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 
 #answerer-view > * {
     text-align: center;
+}
+
+#answerer-view form {
 }
 
 #navbar-answerer {
@@ -8,11 +25,27 @@
 }
 
 #list-choices {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
     list-style: none;
 }
 
+#list-choices li {
+    margin: 2% 2% 2% 2%;
+    width: 44%;
+}
+
 #list-choices button {
-    width: 48%;
+    width: 100%;
+    font-size: 2rem;
+    height: 4em;
+    margin: 0px;
+}
+
+#list-choices input[type='image'] {
+    width: 100%;
+    margin: 0px;
 }
 
 #list-hints {
@@ -21,6 +54,22 @@
 
 #list-hints .columns, #list-hints .column {
     margin-left: 0px;
+}
+
+.result-yes {
+    color: #f00;
+}
+
+.result-no {
+    color: #00f;
+}
+
+.result-answer {
+    font-size: 4rem;
+}
+
+.result-answer img {
+    width: 50%;
 }
 
 #master-list-hints, #master-list-choices {

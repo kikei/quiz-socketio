@@ -39,7 +39,7 @@ var app = http.createServer(function (req, res) {
     }
     else if (pathName.indexOf('/ranking') == 0) {
         var content = View.getRanking(store);
-        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(content), 'utf-8');
     }
     else {

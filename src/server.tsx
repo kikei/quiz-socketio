@@ -38,7 +38,7 @@ const app = http.createServer((req: http.ServerRequest, res: http.ServerResponse
     res.end(fs.readFileSync('client/master.html'))
   } else if (pathName.indexOf('/ranking') == 0) {
     const content = View.getRanking(store)
-    res.writeHead(200, { 'Content-Type': 'text/html' })
+    res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(content), 'utf-8')
   } else {
     res.writeHead(200, { 'Content-Type': 'text/html' })

@@ -75,6 +75,7 @@ export class Result {
 }
 
 export enum AppState {
+  Initial,
   InputName,
   StandBy,
   Question,

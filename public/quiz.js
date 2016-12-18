@@ -62,7 +62,7 @@
 	    init: function (root) {
 	        var preloadedState = {
 	            myname: '',
-	            appState: Models_1.AppState.InputName,
+	            appState: Models_1.AppState.Initial,
 	            quiz: null,
 	            result: null,
 	            cumulativeScore: 0,
@@ -70,26 +70,29 @@
 	        var store = Redux.createStore(reducer, preloadedState, Redux.applyMiddleware(redux_thunk_1.default));
 	        listenSocket(store);
 	        render(root, store);
-	        rejoin(store);
+	        initialize(store);
 	    }
 	};
 	/**
 	 * join automatically when name has been saved
 	 */
-	function rejoin(store) {
+	function initialize(store) {
+	    var answerer = null;
 	    if (window.localStorage) {
-	        var answerer = localStorage.getItem('answerer');
+	        answerer = localStorage.getItem('answerer');
 	        console.log('saved name:', answerer);
-	        if (answerer) {
-	            store.dispatch({
-	                type: Models_1.ActionType.ChangeName,
-	                payload: answerer
-	            });
-	            store.dispatch({
-	                type: Models_1.ActionType.SubmitName,
-	                payload: answerer
-	            });
-	        }
+	    }
+	    if (!answerer) {
+	    }
+	    else {
+	        store.dispatch({
+	            type: Models_1.ActionType.ChangeName,
+	            payload: answerer
+	        });
+	        store.dispatch({
+	            type: Models_1.ActionType.SubmitName,
+	            payload: answerer
+	        });
 	    }
 	}
 	/**
@@ -9887,13 +9890,14 @@
 	}());
 	exports.Result = Result;
 	(function (AppState) {
-	    AppState[AppState["InputName"] = 0] = "InputName";
-	    AppState[AppState["StandBy"] = 1] = "StandBy";
-	    AppState[AppState["Question"] = 2] = "Question";
-	    AppState[AppState["Answered"] = 3] = "Answered";
-	    AppState[AppState["Timeout"] = 4] = "Timeout";
-	    AppState[AppState["Result"] = 5] = "Result";
-	    AppState[AppState["End"] = 6] = "End";
+	    AppState[AppState["Initial"] = 0] = "Initial";
+	    AppState[AppState["InputName"] = 1] = "InputName";
+	    AppState[AppState["StandBy"] = 2] = "StandBy";
+	    AppState[AppState["Question"] = 3] = "Question";
+	    AppState[AppState["Answered"] = 4] = "Answered";
+	    AppState[AppState["Timeout"] = 5] = "Timeout";
+	    AppState[AppState["Result"] = 6] = "Result";
+	    AppState[AppState["End"] = 7] = "End";
 	})(exports.AppState || (exports.AppState = {}));
 	var AppState = exports.AppState;
 	(function (ActionType) {
@@ -9972,6 +9976,10 @@
 	        var topView;
 	        var headerView;
 	        switch (state.appState) {
+	            case Models_1.AppState.Initial:
+	                topView =
+	                    React.createElement("div", {className: "app-loading"});
+	                break;
 	            case Models_1.AppState.InputName:
 	                topView =
 	                    React.createElement("div", null, React.createElement("header", {className: "row"}, React.createElement("h1", null, "Welcome!!")), React.createElement("form", null, React.createElement("div", {className: "row"}, React.createElement("label", {htmlFor: "fieldInputName"}, "Input your name:"), React.createElement("input", {type: "text", name: "name", id: "fieldInputName", value: state.myname, onChange: this.handleChangeName.bind(this)})), React.createElement("div", {className: "row"}, React.createElement("button", {onClick: this.handleSubmitName.bind(this), className: "button-primary"}, "Submit"))));
@@ -10048,6 +10056,7 @@
 	                    React.createElement("div", null, React.createElement("h1", null, "Unknown mode"));
 	        }
 	        switch (state.appState) {
+	            case Models_1.AppState.Initial:
 	            case Models_1.AppState.InputName:
 	            case Models_1.AppState.End:
 	                headerView = React.createElement("nav", null);

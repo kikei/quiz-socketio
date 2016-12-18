@@ -81,6 +81,23 @@ html, body, #quiz-app, #main-view, #answerer-view {
     font-weight: bold;
 }
 
+.app-loading {
+    width: 50px;
+    height: 50px;
+    border: 7px solid rgba(0, 128, 255, 0.4);
+    border-top-color: rgba(0, 128, 255, 0.9);
+    border-radius: 50%;
+    animation: spin 0.8s linear 0s infinite;
+}
+@keyframes spin {
+    0% {
+	transform: rotate(0deg);
+    }
+    100% {
+	transform: rotate(360deg);
+    }
+}
+
 #master-list-hints, #master-list-choices {
     list-style: none;
 }

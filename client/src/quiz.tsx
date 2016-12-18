@@ -24,7 +24,7 @@ function render(root: Element, store: Redux.Store<QuizBoxState>) {
   init: (root: Element) => {
     const preloadedState: QuizBoxState = {
       myname: '',
-      appState: AppState.InputName,
+      appState: AppState.Initial,
       quiz: null,
       result: null,
       cumulativeScore: 0,
@@ -39,27 +39,34 @@ function render(root: Element, store: Redux.Store<QuizBoxState>) {
 
     render(root, store)
 
-    rejoin(store)
+    initialize(store)
   }
 }
 
 /**
  * join automatically when name has been saved
  */
-function rejoin(store: Redux.Store<QuizBoxState>) {
+function initialize(store: Redux.Store<QuizBoxState>) {
+  var answerer: string = null
   if (window.localStorage) {
-    const answerer = localStorage.getItem('answerer')
+    answerer = localStorage.getItem('answerer')
     console.log('saved name:', answerer)
-    if (answerer) {
-      store.dispatch({
-        type: ActionType.ChangeName,
-        payload: answerer
-      })
-      store.dispatch({
-        type: ActionType.SubmitName,
-        payload: answerer
-      })
-    }
+  }
+
+  if (!answerer) {
+    store.dispatch({
+      type: ActionType.ChangeAppState,
+      payload: AppState.InputName
+    })
+  } else {
+    store.dispatch({
+      type: ActionType.ChangeName,
+      payload: answerer
+    })
+    store.dispatch({
+      type: ActionType.SubmitName,
+      payload: answerer
+    })
   }
 }
 

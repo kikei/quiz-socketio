@@ -65,6 +65,10 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
     var headerView: any
 
     switch (state.appState) {
+      case AppState.Initial:
+        topView =
+          <div className="app-loading" />
+        break
       case AppState.InputName:
         topView =
           <div>
@@ -184,6 +188,7 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
           </div>
     }
     switch (state.appState) {
+      case AppState.Initial:
       case AppState.InputName:
       case AppState.End:
         headerView = <nav></nav>

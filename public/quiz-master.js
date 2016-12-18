@@ -9746,13 +9746,14 @@
 	}());
 	exports.Result = Result;
 	(function (AppState) {
-	    AppState[AppState["InputName"] = 0] = "InputName";
-	    AppState[AppState["StandBy"] = 1] = "StandBy";
-	    AppState[AppState["Question"] = 2] = "Question";
-	    AppState[AppState["Answered"] = 3] = "Answered";
-	    AppState[AppState["Timeout"] = 4] = "Timeout";
-	    AppState[AppState["Result"] = 5] = "Result";
-	    AppState[AppState["End"] = 6] = "End";
+	    AppState[AppState["Initial"] = 0] = "Initial";
+	    AppState[AppState["InputName"] = 1] = "InputName";
+	    AppState[AppState["StandBy"] = 2] = "StandBy";
+	    AppState[AppState["Question"] = 3] = "Question";
+	    AppState[AppState["Answered"] = 4] = "Answered";
+	    AppState[AppState["Timeout"] = 5] = "Timeout";
+	    AppState[AppState["Result"] = 6] = "Result";
+	    AppState[AppState["End"] = 7] = "End";
 	})(exports.AppState || (exports.AppState = {}));
 	var AppState = exports.AppState;
 	(function (ActionType) {

@@ -64,7 +64,8 @@ exports.Quiz = Quiz;
     State[State["StandBy"] = 0] = "StandBy";
     State[State["Question"] = 1] = "Question";
     State[State["Answer"] = 2] = "Answer";
-    State[State["End"] = 3] = "End";
+    State[State["Timeout"] = 3] = "Timeout";
+    State[State["End"] = 4] = "End";
 })(exports.State || (exports.State = {}));
 var State = exports.State;
 /**

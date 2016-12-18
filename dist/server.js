@@ -80,7 +80,8 @@ io.sockets.on('connection', function (socket) {
                 var state = store.state;
                 switch (state) {
                     case Models_1.State.StandBy:
-                    case Models_1.State.Answer: {
+                    case Models_1.State.Answer:
+                    case Models_1.State.Timeout: {
                         var socket_1 = io.sockets.connected[socketId];
                         if (socket_1)
                             socket_1.emit('msg', {
@@ -176,6 +177,7 @@ io.sockets.on('connection', function (socket) {
             }
             case 'timeout': {
                 /* Timeout */
+                store.state = Models_1.State.Timeout;
                 for (var answerer in store.clients) {
                     var client_2 = store.getClientByName(answerer);
                     if (client_2.hasAnswer())

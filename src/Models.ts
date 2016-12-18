@@ -75,6 +75,7 @@ export enum State {
     StandBy,
     Question,
     Answer,
+    Timeout,
     End
 }
 

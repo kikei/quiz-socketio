@@ -18,6 +18,23 @@ export default class Config {
         comment: 'Comment',
         rightChoice: 1
       }
+    }),
+    new QuizAnswer({
+      quiz: {
+        question: 'Whice is green?',
+        score: 10,
+        choiceType: 'image',
+        choices: [
+          '/public/choice1.png', '/public/choice2.png',
+          '/public/choice3.png', '/public/choice4.png'],
+        hints: [
+          { hint: 'Hint1', score: 5 },
+        ],
+      },
+      answer: {
+        comment: 'Comment',
+        rightChoice: 3
+      }
     })
   ]
 }

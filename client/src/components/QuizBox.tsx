@@ -1,6 +1,6 @@
 import * as React from "react"
 import * as Redux from 'redux'
-import { Quiz, QuizAnswer, ChoiceType, QuizBoxState, AppState, ActionType } from '../Models'
+import { Quiz, ChoiceType, QuizBoxState, AppState, ActionType } from '../Models'
 import Config from '../Config'
 
 export interface QuizBoxProps {
@@ -97,6 +97,32 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
     })
   }
 
+  makeChoiceView(quiz: Quiz): any {
+    switch (quiz.choiceType) {
+      case ChoiceType.Text:
+        return <ul id="list-choices">
+          {quiz.choices.map((choice, i) =>
+            <li key={i} className="row">
+              <button onClick={this.handleChoice.bind(this, i)}
+                className="one-half">
+                {choice}
+              </button>
+            </li>
+          )}
+        </ul>
+      case ChoiceType.Image:
+        return <ul id="list-choices">
+          {quiz.choices.map((choice, i) =>
+            <li key={i} className="row">
+              <input type="image" src={choice}
+                onClick={this.handleChoice.bind(this, i)}
+                className="one-half" />
+            </li>
+          )}
+        </ul>
+    }
+  }
+
   render() {
     const state = this.props.state
 
@@ -136,19 +162,11 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
           </div>
         break
       case AppState.Question:
+        const choiceView = this.makeChoiceView(state.quiz)
         topView =
           <div>
             <h1>{state.quiz.question}</h1>
-            <ul id="list-choices">
-              {state.quiz.choices.map((choice, i) =>
-                <li key={i} className="row">
-                  <button onClick={this.handleChoice.bind(this, i)}
-                    className="one-half">
-                    {choice}
-                  </button>
-                </li>
-              )}
-            </ul>
+            {choiceView}
             <ul id="list-hints" className="row">
               {state.quiz.hints.map((hint, i) =>
                 <li key={i} className="six columns">{hint}</li>
@@ -172,11 +190,23 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
         break
       case AppState.Result:
         const message = state.result.right ? 'Yes!' : 'No!'
+        var answerView: any;
+        switch (state.quiz.choiceType) {
+          case ChoiceType.Text:
+            answerView = <p>{state.result.answer}</p>
+            break
+          case ChoiceType.Image:
+            answerView = <p><img src={state.result.answer} /></p>
+            break
+          default:
+            console.error('invalid choice type')
+        }
         topView =
           <div>
             <h1>{message}</h1>
             <h2>{state.quiz.question}</h2>
-            <h3>{state.result.answer}</h3>
+            <h3>Answer</h3>
+            {answerView}
           </div>
         break
       case AppState.End:
@@ -228,7 +258,6 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
                 choiceView =
                   <ul id="master-list-choices" className="row">
                     {q.quiz.choices.map((choice, c) => {
-                      console.log(q.quiz, q.answer, c)
                       const className =
                         c == q.answer.rightChoice ? "button-primary" : ""
                       return <li key={c}>
@@ -243,8 +272,18 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
               case ChoiceType.Image:
                 choiceView =
                   <ul id="master-list-choices" className="row">
-                    <li>Images</li>
+                    {q.quiz.choices.map((choice, c) => {
+                      const className =
+                        c == q.answer.rightChoice ? "button-primary" : ""
+                      return <li key={c}>
+                        <input type="image"
+                          src={choice}
+                          onClick={this.handleMasterChoice.bind(this, c)}
+                          className={className} />
+                      </li>
+                    })}
                   </ul>
+                break
             }
             return <div>
               <section>

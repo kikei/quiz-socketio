@@ -9816,6 +9816,7 @@
 	var ChoiceType = exports.ChoiceType;
 	var Quiz = (function () {
 	    function Quiz(data) {
+	        console.log(data);
 	        this.question = data['question'] || '';
 	        this.choiceType = this.choiceTypeFromString(data['choiceType']);
 	        this.choices = data['choices'] || [];
@@ -9834,6 +9835,7 @@
 	        }
 	    };
 	    Quiz.prototype.getChoiceTypeAsString = function () {
+	        console.log(this.choiceType);
 	        switch (this.choiceType) {
 	            case ChoiceType.Text:
 	                return 'text';
@@ -9998,6 +10000,19 @@
 	            }
 	        });
 	    };
+	    QuizBox.prototype.makeChoiceView = function (quiz) {
+	        var _this = this;
+	        switch (quiz.choiceType) {
+	            case Models_1.ChoiceType.Text:
+	                return React.createElement("ul", {id: "list-choices"}, quiz.choices.map(function (choice, i) {
+	                    return React.createElement("li", {key: i, className: "row"}, React.createElement("button", {onClick: _this.handleChoice.bind(_this, i), className: "one-half"}, choice));
+	                }));
+	            case Models_1.ChoiceType.Image:
+	                return React.createElement("ul", {id: "list-choices"}, quiz.choices.map(function (choice, i) {
+	                    return React.createElement("li", {key: i, className: "row"}, React.createElement("input", {type: "image", src: choice, onClick: _this.handleChoice.bind(_this, i), className: "one-half"}));
+	                }));
+	        }
+	    };
 	    QuizBox.prototype.render = function () {
 	        var _this = this;
 	        var state = this.props.state;
@@ -10013,10 +10028,9 @@
 	                    React.createElement("div", null, React.createElement("h1", null, "Please wait..."));
 	                break;
 	            case Models_1.AppState.Question:
+	                var choiceView = this.makeChoiceView(state.quiz);
 	                topView =
-	                    React.createElement("div", null, React.createElement("h1", null, state.quiz.question), React.createElement("ul", {id: "list-choices"}, state.quiz.choices.map(function (choice, i) {
-	                        return React.createElement("li", {key: i, className: "row"}, React.createElement("button", {onClick: _this.handleChoice.bind(_this, i), className: "one-half"}, choice));
-	                    })), React.createElement("ul", {id: "list-hints", className: "row"}, state.quiz.hints.map(function (hint, i) {
+	                    React.createElement("div", null, React.createElement("h1", null, state.quiz.question), choiceView, React.createElement("ul", {id: "list-hints", className: "row"}, state.quiz.hints.map(function (hint, i) {
 	                        return React.createElement("li", {key: i, className: "six columns"}, hint);
 	                    })));
 	                break;
@@ -10030,8 +10044,19 @@
 	                break;
 	            case Models_1.AppState.Result:
 	                var message = state.result.right ? 'Yes!' : 'No!';
+	                var answerView;
+	                switch (state.quiz.choiceType) {
+	                    case Models_1.ChoiceType.Text:
+	                        answerView = React.createElement("p", null, state.result.answer);
+	                        break;
+	                    case Models_1.ChoiceType.Image:
+	                        answerView = React.createElement("p", null, React.createElement("img", {src: state.result.answer}));
+	                        break;
+	                    default:
+	                        console.error('invalid choice type');
+	                }
 	                topView =
-	                    React.createElement("div", null, React.createElement("h1", null, message), React.createElement("h2", null, state.quiz.question), React.createElement("h3", null, state.result.answer));
+	                    React.createElement("div", null, React.createElement("h1", null, message), React.createElement("h2", null, state.quiz.question), React.createElement("h3", null, "Answer"), answerView);
 	                break;
 	            case Models_1.AppState.End:
 	                topView =
@@ -10067,14 +10092,17 @@
 	                        case Models_1.ChoiceType.Text:
 	                            choiceView =
 	                                React.createElement("ul", {id: "master-list-choices", className: "row"}, q.quiz.choices.map(function (choice, c) {
-	                                    console.log(q.quiz, q.answer, c);
 	                                    var className = c == q.answer.rightChoice ? "button-primary" : "";
 	                                    return React.createElement("li", {key: c}, React.createElement("button", {onClick: _this.handleMasterChoice.bind(_this, c), className: className}, choice));
 	                                }));
 	                            break;
 	                        case Models_1.ChoiceType.Image:
 	                            choiceView =
-	                                React.createElement("ul", {id: "master-list-choices", className: "row"}, React.createElement("li", null, "Images"));
+	                                React.createElement("ul", {id: "master-list-choices", className: "row"}, q.quiz.choices.map(function (choice, c) {
+	                                    var className = c == q.answer.rightChoice ? "button-primary" : "";
+	                                    return React.createElement("li", {key: c}, React.createElement("input", {type: "image", src: choice, onClick: _this.handleMasterChoice.bind(_this, c), className: className}));
+	                                }));
+	                            break;
 	                    }
 	                    return React.createElement("div", null, React.createElement("section", null, React.createElement("h2", null, "Question ", i), React.createElement("button", {onClick: _this.handleMasterQuestion.bind(_this, q.quiz)}, q.quiz.question), React.createElement("p", null, "Score: ", q.quiz.score)), React.createElement("section", null, React.createElement("h2", null, "Hints"), React.createElement("ul", {id: "master-list-hints", className: "row"}, q.quiz.hints.map(function (hint, j) {
 	                        return React.createElement("li", {className: "row"}, React.createElement("button", {onClick: _this.handleMasterHint.bind(_this, hint.hint, hint.score)}, hint.hint, "(Score: ", hint.score, ")"));
@@ -10117,6 +10145,23 @@
 	            answer: {
 	                comment: 'Comment',
 	                rightChoice: 1
+	            }
+	        }),
+	        new Models_1.QuizAnswer({
+	            quiz: {
+	                question: 'Whice is green?',
+	                score: 10,
+	                choiceType: 'image',
+	                choices: [
+	                    '/public/choice1.png', '/public/choice2.png',
+	                    '/public/choice3.png', '/public/choice4.png'],
+	                hints: [
+	                    { hint: 'Hint1', score: 5 },
+	                ],
+	            },
+	            answer: {
+	                comment: 'Comment',
+	                rightChoice: 3
 	            }
 	        })
 	    ];

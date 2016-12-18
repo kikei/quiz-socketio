@@ -3,6 +3,7 @@ var fs = require('fs');
 var url = require('url');
 var path = require('path');
 var http = require('http');
+var Models_1 = require('./Models');
 /**
  * HTTP Server
  */
@@ -68,29 +69,6 @@ var Client = (function () {
     return Client;
 }());
 exports.Client = Client;
-/**
- * One quiz
- */
-var Quiz = (function () {
-    function Quiz(question, choices, score) {
-        this.question = question;
-        this.choices = choices;
-        this.rightChoice = -1;
-        this.score = score;
-        this.hints = [];
-    }
-    Quiz.prototype.showAnswer = function () {
-        return this.choices[this.rightChoice];
-    };
-    Quiz.prototype.addHint = function (hint) {
-        this.hints.push(hint);
-    };
-    Quiz.prototype.isRight = function (answer) {
-        return this.rightChoice == answer;
-    };
-    return Quiz;
-}());
-exports.Quiz = Quiz;
 /**
  * Global storage
  */
@@ -212,13 +190,14 @@ io.sockets.on('connection', function (socket) {
                 /* Ask a question */
                 store.state = State.Question;
                 var question = data.question;
+                var choiceType = data.choiceType;
                 var choices = data.choices;
                 var score = data.score;
                 if (!question || !choices || (!score && score != 0)) {
                     console.error('bad data', data);
                     break;
                 }
-                var quiz = new Quiz(question, choices, score);
+                var quiz = new Models_1.Quiz(question, choiceType, choices, score);
                 store.currentQuiz = quiz;
                 io.sockets.emit('msg', {
                     type: 'question',

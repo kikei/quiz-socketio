@@ -3,6 +3,8 @@ import url = require('url')
 import path = require('path')
 import http = require('http')
 
+import { Quiz } from './Models'
+
 /**
  * HTTP Server
  */
@@ -71,34 +73,6 @@ export class Client {
     this.answer = null
   }
 }
-
-/**
- * One quiz
- */
-export class Quiz {
-  public question: string
-  public choices: string[]
-  public rightChoice: number
-  public score: number
-  public hints: string[]
-  constructor(question: string, choices: string[], score: number) {
-    this.question = question
-    this.choices = choices
-    this.rightChoice = -1
-    this.score = score
-    this.hints = []
-  }
-  public showAnswer(): string {
-    return this.choices[this.rightChoice]
-  }
-  public addHint(hint: string): void {
-    this.hints.push(hint)
-  }
-  public isRight(answer: number): boolean {
-    return this.rightChoice == answer
-  }
-}
-
 
 /**
  * Global storage
@@ -226,13 +200,14 @@ io.sockets.on('connection', function (socket) {
         /* Ask a question */
         store.state = State.Question
         var question: string = data.question
+        var choiceType: string = data.choiceType
         var choices: string[] = data.choices
         var score: number = data.score;
         if (!question || !choices || (!score && score != 0)) {
           console.error('bad data', data)
           break
         }
-        var quiz: Quiz = new Quiz(question, choices, score)
+        var quiz: Quiz = new Quiz(question, choiceType, choices, score)
         store.currentQuiz = quiz
         io.sockets.emit('msg', {
           type: 'question',

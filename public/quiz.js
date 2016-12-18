@@ -83,6 +83,10 @@
 	        console.log('saved name:', answerer);
 	    }
 	    if (!answerer) {
+	        store.dispatch({
+	            type: Models_1.ActionType.ChangeAppState,
+	            payload: Models_1.AppState.InputName
+	        });
 	    }
 	    else {
 	        store.dispatch({

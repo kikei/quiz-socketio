@@ -42,9 +42,10 @@ var server = app.listen(port, '0.0.0.0');
  * Store of application server
  */
 var Answer = (function () {
-    function Answer(answer, score) {
+    function Answer(answer, score, date) {
         this.answer = answer;
         this.score = score;
+        this.date = date;
     }
     return Answer;
 }());
@@ -54,11 +55,16 @@ var Client = (function () {
         this.answerer = answerer;
         this.socketId = socketId;
         this.cumulativeScore = 0;
+        this.thinkedTime = 0;
         this.answer = null;
     }
     Client.prototype.addScore = function (score) {
         this.cumulativeScore += score;
         return this.cumulativeScore;
+    };
+    Client.prototype.addThinkedTime = function (millis) {
+        this.thinkedTime += millis;
+        return this.thinkedTime;
     };
     Client.prototype.hasAnswer = function () {
         return !!this.answer;
@@ -177,7 +183,7 @@ io.sockets.on('connection', function (socket) {
                 console.log('myanswer', quiz);
                 var score = quiz.score;
                 var client = store.getClientByName(answerer_2);
-                client.answer = new Answer(answer_1, score);
+                client.answer = new Answer(answer_1, score, Date.now());
                 break; // case myanswer
             }
             /**
@@ -262,28 +268,37 @@ io.sockets.on('connection', function (socket) {
                     break;
                 }
                 quiz.rightChoice = answer;
+                var now = Date.now();
                 /* For ranking by score */
                 var ranks = [];
                 for (var answerer in store.clients) {
                     var client_3 = store.getClientByName(answerer);
                     var right = false;
                     var score = 0;
+                    var delay = 0;
                     if (client_3.hasAnswer()) {
                         var a = client_3.answer;
                         right = quiz.isRight(a.answer);
                         score = right ? a.score : 0;
+                        delay = now - a.date;
                     }
                     client_3.clearAnswer();
                     var cumulativeScore = client_3.addScore(score);
+                    var thinkedTime = client_3.addThinkedTime(delay);
                     ranks.push({
                         client: client_3,
                         right: right,
                         score: score,
-                        cumulativeScore: cumulativeScore
+                        cumulativeScore: cumulativeScore,
+                        thinkedTime: thinkedTime
                     });
                 }
                 ranks.sort(function (a, b) {
-                    return a.cumulativeScore > b.cumulativeScore ? -1 : 1;
+                    if (a.cumulativeScore > b.cumulativeScore)
+                        return -1;
+                    if (a.cumulativeScore < b.cumulativeScore)
+                        return +1;
+                    return b.thinkedTime - a.thinkedTime;
                 });
                 for (var i = 0; i < ranks.length; i++) {
                     var _a = ranks[i], client_4 = _a.client, right_1 = _a.right, score_1 = _a.score, cumulativeScore = _a.cumulativeScore;

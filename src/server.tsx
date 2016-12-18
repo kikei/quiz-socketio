@@ -45,9 +45,11 @@ const server = app.listen(port, '0.0.0.0')
 export class Answer {
   answer: number
   score: number
-  constructor(answer: number, score: number) {
+  date: number
+  constructor(answer: number, score: number, date: number) {
     this.answer = answer
     this.score = score
+    this.date = date
   }
 }
 
@@ -55,16 +57,22 @@ export class Client {
   public answerer: string
   public socketId: string
   public cumulativeScore: number
+  public thinkedTime: number
   public answer: Answer
   constructor(answerer: string, socketId: string) {
     this.answerer = answerer
     this.socketId = socketId
     this.cumulativeScore = 0
+    this.thinkedTime = 0
     this.answer = null
   }
   public addScore(score: number) {
     this.cumulativeScore += score
     return this.cumulativeScore
+  }
+  public addThinkedTime(millis: number) {
+    this.thinkedTime += millis
+    return this.thinkedTime
   }
   public hasAnswer() {
     return !!this.answer
@@ -187,7 +195,7 @@ io.sockets.on('connection', function (socket) {
         console.log('myanswer', quiz)
         var score: number = quiz.score
         var client: Client = store.getClientByName(answerer)
-        client.answer = new Answer(answer, score)
+        client.answer = new Answer(answer, score, Date.now())
         break // case myanswer
       }
       /**
@@ -273,12 +281,15 @@ io.sockets.on('connection', function (socket) {
         }
         quiz.rightChoice = answer
 
+        const now: number = Date.now()
+
         /* For ranking by score */
         const ranks: {
           client: Client
-          right: boolean,
+          right: boolean
           score: number
-          cumulativeScore: number,
+          cumulativeScore: number
+          thinkedTime: number
         }[] = []
 
         for (var answerer in store.clients) {
@@ -286,22 +297,28 @@ io.sockets.on('connection', function (socket) {
 
           var right: boolean = false
           var score: number = 0
+          var delay: number = 0
           if (client.hasAnswer()) {
             const a = client.answer
             right = quiz.isRight(a.answer)
             score = right ? a.score : 0
+            delay = now - a.date
           }
           client.clearAnswer();
           const cumulativeScore = client.addScore(score)
+          const thinkedTime = client.addThinkedTime(delay)
           ranks.push({
             client: client,
             right: right,
             score: score,
-            cumulativeScore: cumulativeScore
+            cumulativeScore: cumulativeScore,
+            thinkedTime: thinkedTime
           })
         }
         ranks.sort((a, b) => {
-          return a.cumulativeScore > b.cumulativeScore ? -1 : 1
+          if (a.cumulativeScore > b.cumulativeScore) return -1
+          if (a.cumulativeScore < b.cumulativeScore) return +1
+          return b.thinkedTime - a.thinkedTime
         })
         for (var i = 0; i < ranks.length; i++) {
           const { client, right, score, cumulativeScore } = ranks[i]

@@ -9866,6 +9866,7 @@
 	        this.answer = data.answer;
 	        this.score = data.score;
 	        this.cumulativeScore = data.cumulativeScore;
+	        this.rank = data.rank;
 	    }
 	    return Result;
 	}());
@@ -10048,6 +10049,27 @@
 	                else {
 	                    messageView = React.createElement("span", {className: "result-no"}, "No!");
 	                }
+	                var rankText = null;
+	                var rankClass = null;
+	                if (state.result.rank == 0) {
+	                    rankText = "1st";
+	                    rankClass = "rank-1st";
+	                }
+	                else if (state.result.rank == 1) {
+	                    rankText = "2nd";
+	                    rankClass = "rank-2nd";
+	                }
+	                else if (state.result.rank == 2) {
+	                    rankText = "3rd";
+	                    rankClass = "rank-3rd";
+	                }
+	                else if (state.result.rank < 10) {
+	                    rankText = "top 10";
+	                    rankClass = "rank-top10";
+	                }
+	                console.log(rankText);
+	                var rankView = rankText == null ? React.createElement("p", null) :
+	                    React.createElement("p", {className: "result-rank"}, "Your rank: ", React.createElement("span", {className: rankClass}, rankText));
 	                var answerView;
 	                switch (state.quiz.choiceType) {
 	                    case Models_1.ChoiceType.Text:
@@ -10060,7 +10082,7 @@
 	                        console.error('invalid choice type');
 	                }
 	                topView =
-	                    React.createElement("div", null, React.createElement("h1", null, messageView), React.createElement("h2", {className: "result-question"}, "Q. ", state.quiz.question), React.createElement("h3", {className: "result-answer"}, "A. ", answerView));
+	                    React.createElement("div", null, React.createElement("h1", null, messageView), React.createElement("p", {className: "result-question"}, "Q. ", state.quiz.question), React.createElement("p", {className: "result-answer"}, "A. ", answerView), rankView);
 	                break;
 	            case Models_1.AppState.End:
 	                topView =

@@ -64,12 +64,21 @@ html, body, #quiz-app, #main-view, #answerer-view {
     color: #00f;
 }
 
-.result-answer {
-    font-size: 4rem;
+.result-question, .result-answer {
+    font-size: 3.0rem;
 }
 
 .result-answer img {
     width: 50%;
+}
+
+.result-rank {
+    font-size: 2.4rem;
+}
+
+.result-rank span {
+    font-size: 3.0rem;
+    font-weight: bold;
 }
 
 #master-list-hints, #master-list-choices {

@@ -194,6 +194,27 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
         } else {
           messageView = <span className="result-no">No!</span>
         }
+        var rankText: string = null
+        var rankClass: string = null
+        if (state.result.rank == 0) {
+          rankText = "1st"
+          rankClass = "rank-1st"
+        } else if (state.result.rank == 1) {
+          rankText = "2nd"
+          rankClass = "rank-2nd"
+        } else if (state.result.rank == 2) {
+          rankText = "3rd"
+          rankClass = "rank-3rd"
+        } else if (state.result.rank < 10) {
+          rankText = "top 10"
+          rankClass = "rank-top10"
+        }
+        console.log(rankText)
+        var rankView: any =
+          rankText == null ? <p /> :
+            <p className="result-rank">
+              Your rank: <span className={rankClass}>{rankText}</span>
+            </p>
         var answerView: any;
         switch (state.quiz.choiceType) {
           case ChoiceType.Text:
@@ -208,8 +229,9 @@ export class QuizBox extends React.Component<QuizBoxProps, any> {
         topView =
           <div>
             <h1>{messageView}</h1>
-            <h2 className="result-question">Q. {state.quiz.question}</h2>
-            <h3 className="result-answer">A. {answerView}</h3>
+            <p className="result-question">Q. {state.quiz.question}</p>
+            <p className="result-answer">A. {answerView}</p>
+            {rankView}
           </div>
         break
       case AppState.End:

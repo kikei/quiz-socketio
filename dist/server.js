@@ -254,6 +254,8 @@ io.sockets.on('connection', function (socket) {
                     break;
                 }
                 quiz.rightChoice = answer;
+                /* For ranking by score */
+                var ranks = [];
                 for (var answerer in store.clients) {
                     var client_3 = store.getClientByName(answerer);
                     var right = false;
@@ -265,14 +267,27 @@ io.sockets.on('connection', function (socket) {
                     }
                     client_3.clearAnswer();
                     var cumulativeScore = client_3.addScore(score);
-                    var socketId = client_3.socketId;
-                    console.log('send result to', socketId);
-                    io.sockets.connected[socketId].emit('msg', {
-                        type: 'result',
+                    ranks.push({
+                        client: client_3,
                         right: right,
-                        answer: quiz.showAnswer(),
                         score: score,
                         cumulativeScore: cumulativeScore
+                    });
+                }
+                ranks.sort(function (a, b) {
+                    return a.cumulativeScore > b.cumulativeScore ? -1 : 1;
+                });
+                for (var i = 0; i < ranks.length; i++) {
+                    var _a = ranks[i], client_4 = _a.client, right_1 = _a.right, score_1 = _a.score, cumulativeScore = _a.cumulativeScore;
+                    var socketId = client_4.socketId;
+                    console.log('send result to', socketId, 'rank:', i);
+                    io.sockets.connected[socketId].emit('msg', {
+                        type: 'result',
+                        right: right_1,
+                        answer: quiz.showAnswer(),
+                        score: score_1,
+                        cumulativeScore: cumulativeScore,
+                        rank: i
                     });
                 }
                 break; // case answer

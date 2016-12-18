@@ -64,11 +64,13 @@ export class Result {
   public answer: string
   public score: number
   public cumulativeScore: number
+  public rank: number
   constructor(data: any) {
     this.right = data.right
     this.answer = data.answer
     this.score = data.score
     this.cumulativeScore = data.cumulativeScore
+    this.rank = data.rank
   }
 }
 

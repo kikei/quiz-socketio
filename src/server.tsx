@@ -265,6 +265,14 @@ io.sockets.on('connection', function (socket) {
         }
         quiz.rightChoice = answer
 
+        /* For ranking by score */
+        const ranks: {
+          client: Client
+          right: boolean,
+          score: number
+          cumulativeScore: number,
+        }[] = []
+
         for (var answerer in store.clients) {
           const client = store.getClientByName(answerer)
 
@@ -277,19 +285,31 @@ io.sockets.on('connection', function (socket) {
           }
           client.clearAnswer();
           const cumulativeScore = client.addScore(score)
+          ranks.push({
+            client: client,
+            right: right,
+            score: score,
+            cumulativeScore: cumulativeScore
+          })
+        }
+        ranks.sort((a, b) => {
+          return a.cumulativeScore > b.cumulativeScore ? -1 : 1
+        })
+        for (var i = 0; i < ranks.length; i++) {
+          const { client, right, score, cumulativeScore } = ranks[i]
           const socketId = client.socketId
-          console.log('send result to', socketId)
+          console.log('send result to', socketId, 'rank:', i)
           io.sockets.connected[socketId].emit('msg', {
             type: 'result',
             right: right,
             answer: quiz.showAnswer(),
             score: score,
-            cumulativeScore: cumulativeScore
+            cumulativeScore: cumulativeScore,
+            rank: i
           })
         }
         break // case answer
       }
-
       case 'end': {
         /* End game */
         store.state = State.End

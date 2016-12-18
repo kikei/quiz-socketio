@@ -139,23 +139,29 @@ io.sockets.on('connection', function (socket) {
                 var state = store.state;
                 switch (state) {
                     case State.StandBy:
-                    case State.Answer:
-                        io.sockets.connected[socketId].emit('msg', {
-                            type: 'joined',
-                            answerer: client_1.answerer,
-                            state: 'standby',
-                            cumulativeScore: client_1.cumulativeScore
-                        });
+                    case State.Answer: {
+                        var socket_1 = io.sockets.connected[socketId];
+                        if (socket_1)
+                            socket_1.emit('msg', {
+                                type: 'joined',
+                                answerer: client_1.answerer,
+                                state: 'standby',
+                                cumulativeScore: client_1.cumulativeScore
+                            });
                         break;
-                    case State.Question:
-                        io.sockets.connected[socketId].emit('msg', {
-                            type: 'joined',
-                            answerer: client_1.answerer,
-                            state: client_1.hasAnswer() ? 'answered' : 'question',
-                            quiz: store.currentQuiz,
-                            cumulativeScore: client_1.cumulativeScore,
-                        });
+                    }
+                    case State.Question: {
+                        var socket_2 = io.sockets.connected[socketId];
+                        if (socket_2)
+                            socket_2.emit('msg', {
+                                type: 'joined',
+                                answerer: client_1.answerer,
+                                state: client_1.hasAnswer() ? 'answered' : 'question',
+                                quiz: store.currentQuiz,
+                                cumulativeScore: client_1.cumulativeScore,
+                            });
                         break;
+                    }
                 }
                 break; // case join
             }
@@ -234,9 +240,11 @@ io.sockets.on('connection', function (socket) {
                     if (client_2.hasAnswer())
                         continue;
                     var socketId = client_2.socketId;
-                    io.sockets.connected[socketId].emit('msg', {
-                        type: 'timeout'
-                    });
+                    var socket_3 = io.sockets.connected[socketId];
+                    if (socket_3)
+                        socket_3.emit('msg', {
+                            type: 'timeout'
+                        });
                 }
                 break;
             }
@@ -281,14 +289,16 @@ io.sockets.on('connection', function (socket) {
                     var _a = ranks[i], client_4 = _a.client, right_1 = _a.right, score_1 = _a.score, cumulativeScore = _a.cumulativeScore;
                     var socketId = client_4.socketId;
                     console.log('send result to', socketId, 'rank:', i);
-                    io.sockets.connected[socketId].emit('msg', {
-                        type: 'result',
-                        right: right_1,
-                        answer: quiz.showAnswer(),
-                        score: score_1,
-                        cumulativeScore: cumulativeScore,
-                        rank: i
-                    });
+                    var socket_4 = io.sockets.connected[socketId];
+                    if (socket_4)
+                        socket_4.emit('msg', {
+                            type: 'result',
+                            right: right_1,
+                            answer: quiz.showAnswer(),
+                            score: score_1,
+                            cumulativeScore: cumulativeScore,
+                            rank: i
+                        });
                 }
                 break; // case answer
             }

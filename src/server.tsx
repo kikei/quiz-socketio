@@ -149,23 +149,29 @@ io.sockets.on('connection', function (socket) {
         const state = store.state
         switch (state) {
           case State.StandBy:
-          case State.Answer:
-            io.sockets.connected[socketId].emit('msg', {
-              type: 'joined',
-              answerer: client.answerer,
-              state: 'standby',
-              cumulativeScore: client.cumulativeScore
-            })
+          case State.Answer: {
+            const socket = io.sockets.connected[socketId]
+            if (socket)
+              socket.emit('msg', {
+                type: 'joined',
+                answerer: client.answerer,
+                state: 'standby',
+                cumulativeScore: client.cumulativeScore
+              })
             break
-          case State.Question:
-            io.sockets.connected[socketId].emit('msg', {
-              type: 'joined',
-              answerer: client.answerer,
-              state: client.hasAnswer() ? 'answered' : 'question',
-              quiz: store.currentQuiz,
-              cumulativeScore: client.cumulativeScore,
-            })
+          }
+          case State.Question: {
+            const socket = io.sockets.connected[socketId]
+            if (socket)
+              socket.emit('msg', {
+                type: 'joined',
+                answerer: client.answerer,
+                state: client.hasAnswer() ? 'answered' : 'question',
+                quiz: store.currentQuiz,
+                cumulativeScore: client.cumulativeScore,
+              })
             break
+          }
         }
         break // case join
       }
@@ -244,9 +250,11 @@ io.sockets.on('connection', function (socket) {
           if (client.hasAnswer())
             continue
           const socketId = client.socketId
-          io.sockets.connected[socketId].emit('msg', {
-            type: 'timeout'
-          })
+          const socket = io.sockets.connected[socketId]
+          if (socket)
+            socket.emit('msg', {
+              type: 'timeout'
+            })
         }
         break
       }
@@ -299,14 +307,16 @@ io.sockets.on('connection', function (socket) {
           const { client, right, score, cumulativeScore } = ranks[i]
           const socketId = client.socketId
           console.log('send result to', socketId, 'rank:', i)
-          io.sockets.connected[socketId].emit('msg', {
-            type: 'result',
-            right: right,
-            answer: quiz.showAnswer(),
-            score: score,
-            cumulativeScore: cumulativeScore,
-            rank: i
-          })
+          const socket = io.sockets.connected[socketId]
+          if (socket)
+            socket.emit('msg', {
+              type: 'result',
+              right: right,
+              answer: quiz.showAnswer(),
+              score: score,
+              cumulativeScore: cumulativeScore,
+              rank: i
+            })
         }
         break // case answer
       }

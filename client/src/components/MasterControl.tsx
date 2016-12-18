@@ -1,6 +1,6 @@
 import * as React from "react"
 import * as Redux from 'redux'
-import { Quiz, ChoiceType, MasterControlState, ActionType } from '../Models'
+import { Quiz, QuizAnswer, ChoiceType, MasterControlState, ActionType } from '../Models'
 import Config from '../Config'
 
 export interface MasterControlProps {
@@ -25,6 +25,46 @@ export class MasterControl extends React.Component<MasterControlProps, any> {
       payload: {
         type: 'end'
       }
+    })
+  }
+  handleChangeQuizSheet(e: any) {
+    this.props.dispatch({
+      type: ActionType.ChangeQuizSheet,
+      payload: e.target.value
+    })
+  }
+  handleClearQuizSheet(e: any) {
+    this.props.dispatch({
+      type: ActionType.ChangeQuizSheet,
+      payload: ''
+    })
+  }
+  handleDefaultQuizSheet(e: any) {
+    this.props.dispatch({
+      type: ActionType.ChangeQuizSheet,
+      payload: JSON.stringify(Config.defaultQuizSheet, null, '  ')
+    })
+  }
+  handleSubmitQuizSheet(e: React.SyntheticEvent) {
+    e.preventDefault()
+    const sheet = this.props.state.quizSheet
+    console.log('sheet', sheet)
+    var quizzes: QuizAnswer[] = []
+    try {
+      const array = JSON.parse(sheet)
+      quizzes = array.map((obj: any) => new QuizAnswer(obj))
+    } catch (e) {
+      console.error('failed to parse json', e)
+      return
+    }
+    if (quizzes.length == 0) {
+      console.error('failed to load sheet')
+      return
+    }
+
+    this.props.dispatch({
+      type: ActionType.SubmitQuizSheet,
+      payload: quizzes
     })
   }
   handleMasterQuestion(quiz: Quiz, e: React.SyntheticEvent) {
@@ -71,15 +111,34 @@ export class MasterControl extends React.Component<MasterControlProps, any> {
       }
     })
   }
-
   makeMasterView(): any {
-    return <div id="master-view" className="container">
+    const state = this.props.state
+
+    const quizSheetHeight =
+      state.quizzes.length > 0 ? '10em' : '20em'
+    const quizSheetView =
+      <div id="master-quiz-sheet">
+        <div className="row">
+          <textarea cols="80" rows="10"
+            value={state.quizSheet}
+            style={{ height: quizSheetHeight, 'font-family': 'monospace' }}
+            onChange={this.handleChangeQuizSheet.bind(this)} />
+        </div>
+        <div className="row">
+          <button onClick={this.handleClearQuizSheet.bind(this)}>Clear</button>
+          <button onClick={this.handleSubmitQuizSheet.bind(this)}>Send</button>
+          <button onClick={this.handleDefaultQuizSheet.bind(this)}>Default</button>
+        </div >
+      </div >
+
+    return <div id="master-view" className="container" >
       <h1>Master mode</h1>
       <p>
         <button onClick={this.handleMasterReset.bind(this)}>Reset</button>
         <button onClick={this.handleMasterEnd.bind(this)}>End</button>
       </p>
-      {Config.quizzes.map((q, i) => {
+      {quizSheetView}
+      {state.quizzes.map((q, i) => {
         var choiceView: any
         switch (q.quiz.choiceType) {
           case ChoiceType.Text:
@@ -114,7 +173,7 @@ export class MasterControl extends React.Component<MasterControlProps, any> {
             break
         }
         var hintsView: any
-        if (q.quiz.hints.length > 0) {
+        if (q.quiz.hints && q.quiz.hints.length > 0) {
           hintsView =
             <section>
               <h2>Hints</h2>
@@ -157,8 +216,9 @@ export class MasterControl extends React.Component<MasterControlProps, any> {
             {choiceView}
           </section>
         </div>
-      })}
-    </div>
+      })
+      }
+    </div >
   }
 
   render() {

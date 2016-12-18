@@ -9880,7 +9880,9 @@
 	    ActionType[ActionType["SetQuiz"] = 5] = "SetQuiz";
 	    ActionType[ActionType["AddHint"] = 6] = "AddHint";
 	    ActionType[ActionType["Result"] = 7] = "Result";
-	    ActionType[ActionType["MasterOperation"] = 8] = "MasterOperation";
+	    ActionType[ActionType["ChangeQuizSheet"] = 8] = "ChangeQuizSheet";
+	    ActionType[ActionType["SubmitQuizSheet"] = 9] = "SubmitQuizSheet";
+	    ActionType[ActionType["MasterOperation"] = 10] = "MasterOperation";
 	})(exports.ActionType || (exports.ActionType = {}));
 	var ActionType = exports.ActionType;
 

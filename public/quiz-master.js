@@ -60,7 +60,10 @@
 	}
 	window.MasterApp = {
 	    init: function (root) {
-	        var preloadedState = {};
+	        var preloadedState = {
+	            quizSheet: '',
+	            quizzes: []
+	        };
 	        var store = Redux.createStore(reducer, preloadedState, Redux.applyMiddleware(redux_thunk_1.default));
 	        listenSocket(store);
 	        render(root, store);
@@ -83,6 +86,17 @@
 	var assign = __webpack_require__(84);
 	function reducer(state, action) {
 	    switch (action.type) {
+	        case Models_1.ActionType.ChangeQuizSheet:
+	            var sheet = action.payload;
+	            console.log(sheet);
+	            return assign({}, state, {
+	                quizSheet: sheet
+	            });
+	        case Models_1.ActionType.SubmitQuizSheet:
+	            var quizzes = action.payload;
+	            return assign({}, state, {
+	                quizzes: quizzes
+	            });
 	        case Models_1.ActionType.MasterOperation:
 	            var msg = action.payload;
 	            console.log('master operation', msg);
@@ -9750,7 +9764,9 @@
 	    ActionType[ActionType["SetQuiz"] = 5] = "SetQuiz";
 	    ActionType[ActionType["AddHint"] = 6] = "AddHint";
 	    ActionType[ActionType["Result"] = 7] = "Result";
-	    ActionType[ActionType["MasterOperation"] = 8] = "MasterOperation";
+	    ActionType[ActionType["ChangeQuizSheet"] = 8] = "ChangeQuizSheet";
+	    ActionType[ActionType["SubmitQuizSheet"] = 9] = "SubmitQuizSheet";
+	    ActionType[ActionType["MasterOperation"] = 10] = "MasterOperation";
 	})(exports.ActionType || (exports.ActionType = {}));
 	var ActionType = exports.ActionType;
 
@@ -9881,6 +9897,46 @@
 	            }
 	        });
 	    };
+	    MasterControl.prototype.handleChangeQuizSheet = function (e) {
+	        this.props.dispatch({
+	            type: Models_1.ActionType.ChangeQuizSheet,
+	            payload: e.target.value
+	        });
+	    };
+	    MasterControl.prototype.handleClearQuizSheet = function (e) {
+	        this.props.dispatch({
+	            type: Models_1.ActionType.ChangeQuizSheet,
+	            payload: ''
+	        });
+	    };
+	    MasterControl.prototype.handleDefaultQuizSheet = function (e) {
+	        this.props.dispatch({
+	            type: Models_1.ActionType.ChangeQuizSheet,
+	            payload: JSON.stringify(Config_1.default.defaultQuizSheet, null, '  ')
+	        });
+	    };
+	    MasterControl.prototype.handleSubmitQuizSheet = function (e) {
+	        e.preventDefault();
+	        var sheet = this.props.state.quizSheet;
+	        console.log('sheet', sheet);
+	        var quizzes = [];
+	        try {
+	            var array = JSON.parse(sheet);
+	            quizzes = array.map(function (obj) { return new Models_1.QuizAnswer(obj); });
+	        }
+	        catch (e) {
+	            console.error('failed to parse json', e);
+	            return;
+	        }
+	        if (quizzes.length == 0) {
+	            console.error('failed to load sheet');
+	            return;
+	        }
+	        this.props.dispatch({
+	            type: Models_1.ActionType.SubmitQuizSheet,
+	            payload: quizzes
+	        });
+	    };
 	    MasterControl.prototype.handleMasterQuestion = function (quiz, e) {
 	        e.preventDefault();
 	        this.props.dispatch({
@@ -9926,7 +9982,10 @@
 	    };
 	    MasterControl.prototype.makeMasterView = function () {
 	        var _this = this;
-	        return React.createElement("div", {id: "master-view", className: "container"}, React.createElement("h1", null, "Master mode"), React.createElement("p", null, React.createElement("button", {onClick: this.handleMasterReset.bind(this)}, "Reset"), React.createElement("button", {onClick: this.handleMasterEnd.bind(this)}, "End")), Config_1.default.quizzes.map(function (q, i) {
+	        var state = this.props.state;
+	        var quizSheetHeight = state.quizzes.length > 0 ? '10em' : '20em';
+	        var quizSheetView = React.createElement("div", {id: "master-quiz-sheet"}, React.createElement("div", {className: "row"}, React.createElement("textarea", {cols: "80", rows: "10", value: state.quizSheet, style: { height: quizSheetHeight, 'font-family': 'monospace' }, onChange: this.handleChangeQuizSheet.bind(this)})), React.createElement("div", {className: "row"}, React.createElement("button", {onClick: this.handleClearQuizSheet.bind(this)}, "Clear"), React.createElement("button", {onClick: this.handleSubmitQuizSheet.bind(this)}, "Send"), React.createElement("button", {onClick: this.handleDefaultQuizSheet.bind(this)}, "Default")));
+	        return React.createElement("div", {id: "master-view", className: "container"}, React.createElement("h1", null, "Master mode"), React.createElement("p", null, React.createElement("button", {onClick: this.handleMasterReset.bind(this)}, "Reset"), React.createElement("button", {onClick: this.handleMasterEnd.bind(this)}, "End")), quizSheetView, state.quizzes.map(function (q, i) {
 	            var choiceView;
 	            switch (q.quiz.choiceType) {
 	                case Models_1.ChoiceType.Text:
@@ -9945,7 +10004,7 @@
 	                    break;
 	            }
 	            var hintsView;
-	            if (q.quiz.hints.length > 0) {
+	            if (q.quiz.hints && q.quiz.hints.length > 0) {
 	                hintsView =
 	                    React.createElement("section", null, React.createElement("h2", null, "Hints"), React.createElement("ul", {id: "master-list-hints", className: "row"}, q.quiz.hints.map(function (hint, j) {
 	                        return React.createElement("li", {className: "row"}, React.createElement("button", {onClick: _this.handleMasterHint.bind(_this, hint.hint, hint.score)}, hint.hint, "(Score: ", hint.score, ")"));
@@ -9969,45 +10028,45 @@
 
 /***/ },
 /* 86 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	"use strict";
-	var Models_1 = __webpack_require__(82);
 	var Config = (function () {
 	    function Config() {
 	    }
-	    Config.quizzes = [
-	        new Models_1.QuizAnswer({
+	    Config.defaultQuizSheet = [
+	        {
 	            quiz: {
-	                question: 'What has four legs and a back but no body?',
-	                score: 10,
-	                choiceType: 'text',
-	                choices: ['Door', 'Chair', 'Spoon'],
-	                hints: [
-	                    { hint: 'Hint1', score: 5 },
-	                    { hint: 'Hint2', score: 3 }
-	                ],
+	                question: "What has four legs and a back but no body?",
+	                score: 100,
+	                choiceType: "text",
+	                choices: ["Door", "Chair", "Spoon"]
 	            },
+	            hints: [
+	                { hint: 'Hint1', score: 5 },
+	                { hint: 'Hint2', score: 3 }
+	            ],
 	            answer: {
-	                comment: 'Comment',
+	                comment: "Comment",
 	                rightChoice: 1
 	            }
-	        }),
-	        new Models_1.QuizAnswer({
+	        },
+	        {
 	            quiz: {
-	                question: 'Whice is green?',
-	                score: 10,
-	                choiceType: 'image',
+	                question: "Whice is green?",
+	                score: 100,
+	                choiceType: "image",
 	                choices: [
-	                    '/public/choice1.png', '/public/choice2.png',
-	                    '/public/choice3.png', '/public/choice4.png'],
+	                    "/public/choice1.png", "/public/choice2.png",
+	                    "/public/choice3.png", "/public/choice4.png"
+	                ]
 	            },
 	            answer: {
-	                comment: 'Comment',
+	                comment: "Comment",
 	                rightChoice: 3
 	            }
-	        })
-	    ];
+	        }
+	    ]; /* defaultQuizSheet */
 	    return Config;
 	}());
 	Object.defineProperty(exports, "__esModule", { value: true });

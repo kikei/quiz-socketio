@@ -19,7 +19,7 @@ export class Quiz {
     this.score = data['score'] || 0
   }
 
-  choiceTypeFromString(choiceType: string): ChoiceType {
+  public choiceTypeFromString(choiceType: string): ChoiceType {
     switch (choiceType) {
       case 'text':
         return ChoiceType.Text
@@ -94,6 +94,8 @@ export interface QuizBoxState {
 }
 
 export interface MasterControlState {
+  quizSheet: string,
+  quizzes: QuizAnswer[]
 }
 
 /** Actions **/
@@ -114,5 +116,7 @@ export enum ActionType {
   AddHint,
   Result,
 
+  ChangeQuizSheet,
+  SubmitQuizSheet,
   MasterOperation
 }

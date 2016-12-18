@@ -4,7 +4,7 @@ import * as ReactDOM from "react-dom"
 import * as Redux from "redux"
 import thunk from 'redux-thunk'
 import { Provider, connect } from 'react-redux'
-import { Quiz, Result, MasterControlState, Action, ActionType } from './Models'
+import { Quiz, QuizAnswer, Result, MasterControlState, Action, ActionType } from './Models'
 import { MasterControl } from './components/MasterControl'
 import Config from './Config'
 
@@ -24,6 +24,8 @@ function render(root: Element, store: Redux.Store<MasterControlState>) {
 (window as any).MasterApp = {
   init: (root: Element) => {
     const preloadedState: MasterControlState = {
+      quizSheet: '',
+      quizzes: []
     }
     const store: Redux.Store<MasterControlState> = Redux.createStore(
       reducer,
@@ -57,6 +59,17 @@ import assign = require('object-assign')
 export
   function reducer(state: MasterControlState, action: Action<any>): MasterControlState {
   switch (action.type) {
+    case ActionType.ChangeQuizSheet:
+      const sheet = action.payload
+      console.log(sheet)
+      return assign({}, state, {
+        quizSheet: sheet
+      })
+    case ActionType.SubmitQuizSheet:
+      const quizzes = action.payload
+      return assign({}, state, {
+        quizzes: quizzes
+      })
     case ActionType.MasterOperation:
       const msg = action.payload
       console.log('master operation', msg)
